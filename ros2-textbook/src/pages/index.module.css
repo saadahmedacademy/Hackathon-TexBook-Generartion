@@ -4,15 +4,24 @@
  */
 
 .heroBanner {
-  padding: 4rem 0;
+  padding: 6rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  background-color: var(--ifm-global-card-background-color);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.heroLogo {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 1rem;
+  color: var(--ifm-color-primary);
 }
 
 @media screen and (max-width: 996px) {
   .heroBanner {
-    padding: 2rem;
+    padding: 3rem;
   }
 }
 
@@ -20,4 +29,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.features {
+  padding: 4rem 0;
+}
+
+.featureCard {
+  margin-bottom: 2rem;
+}
+
+/* Ensure cards in the same row have the same height */
+.featureCard .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.featureCard .card__body {
+  flex-grow: 1;
 }
