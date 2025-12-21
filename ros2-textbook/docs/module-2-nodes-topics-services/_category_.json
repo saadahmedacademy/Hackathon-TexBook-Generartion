@@ -1,0 +1,8 @@
+{
+  "label": "Module 2: Nodes, Topics, Services",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Explore the core communication mechanisms in ROS 2."
+  }
+}

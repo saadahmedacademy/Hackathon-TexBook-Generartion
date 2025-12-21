@@ -1,0 +1,8 @@
+{
+  "label": "Module 3: URDF & Humanoid Simulation",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Learn about robot modeling and simulation in ROS 2."
+  }
+}
