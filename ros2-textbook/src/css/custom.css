@@ -4,27 +4,104 @@
  * work well for content-centric websites.
  */
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /*
+    Color Palette:
+    A modern, academic-focused theme with a professional blue as the primary color.
+  */
+  --ifm-color-primary: #2D64A5; /* A strong, professional blue */
+  --ifm-color-primary-dark: #295a94;
+  --ifm-color-primary-darker: #27548b;
+  --ifm-color-primary-darkest: #204572;
+  --ifm-color-primary-light: #316eb6;
+  --ifm-color-primary-lighter: #3373be;
+  --ifm-color-primary-lightest: #3c7fce;
+
+  /*
+    Typography:
+    Using a system font stack for performance and a professional feel.
+    Increased base line height for readability.
+  */
+  --ifm-font-family-base: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --ifm-line-height-base: 1.65;
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /*
+    UI Polish:
+    Adding a slight border radius to elements for a softer, more modern look.
+  */
+  --ifm-alert-border-radius: 8px;
+  --ifm-card-border-radius: 8px;
+  --ifm-button-border-radius: 6px;
+  --ifm-tabs-border-radius: 8px;
+  --ifm-toc-border-radius: 8px;
+
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.08);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #5C99D6; /* A lighter, more vibrant blue for dark backgrounds */
+  --ifm-color-primary-dark: #4d89c9;
+  --ifm-color-primary-darker: #4582c5;
+  --ifm-color-primary-darkest: #2d6eb5;
+  --ifm-color-primary-light: #6ba9e3;
+  --ifm-color-primary-lighter: #73ade6;
+  --ifm-color-primary-lightest: #8ec2ed;
+
+  --ifm-background-color: #121212; /* A true black for deep contrast */
+  --ifm-global-card-background-color: #1e1e1e;
+
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.1);
+}
+
+/*
+  Heading Hierarchy:
+  Clearer distinction between heading levels.
+*/
+h1, .h1 { font-size: 2.5rem; }
+h2, .h2 { font-size: 2rem; }
+h3, .h3 { font-size: 1.75rem; }
+h4, .h4 { font-size: 1.5rem; }
+h5, .h5 { font-size: 1.25rem; }
+h6, .h6 { font-size: 1rem; }
+
+/*
+  Content Presentation Enhancements
+*/
+
+/* Code Blocks */
+div[class*="codeBlockContainer"] {
+  border-radius: var(--ifm-card-border-radius);
+}
+
+.code-block-copy-button {
+  border-radius: 4px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+table th,
+table td {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+table th {
+  font-weight: bold;
+  background-color: var(--ifm-color-emphasis-100);
+}
+
+table tr:nth-child(even) {
+  background-color: var(--ifm-color-emphasis-0);
+}
+
+/* Admonitions */
+.alert {
+  border-left-width: 6px;
 }

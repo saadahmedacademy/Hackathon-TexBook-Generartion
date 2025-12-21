@@ -7,7 +7,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'ROS 2 Textbook',
   tagline: 'A comprehensive guide to ROS 2 and humanoid robotics',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -57,15 +57,23 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
+      defaultMode: 'light',
+      disableSwitch: false,
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'ROS 2 Textbook',
+      title: 'ROS 2 Humanoid Textbook',
       logo: {
         alt: 'ROS 2 Textbook Logo',
         src: 'img/logo.svg',
+        srcDark: 'img/logo.svg', // Ensure logo is compatible
       },
       items: [
+        {
+          to: '/',
+          label: 'Home',
+          position: 'left'
+        },
         {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
@@ -73,7 +81,7 @@ const config: Config = {
           label: 'Textbook',
         },
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/gemini-ros2-textbook/ros2-textbook',
           label: 'GitHub',
           position: 'right',
         },
@@ -83,7 +91,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Learn',
           items: [
             {
               label: 'Textbook',
@@ -95,34 +103,23 @@ const config: Config = {
           title: 'Community',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-            },
-            {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/gemini-ros2-textbook/ros2-textbook',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Gemini ROS 2 Textbook. Built with Docusaurus.`,
+      logo: {
+        alt: 'ROS 2 Textbook Logo',
+        src: 'img/logo.svg',
+        href: '/',
+        width: 50,
+      },
+      copyright: `Copyright © ${new Date().getFullYear()} ROS 2 Humanoid Textbook. Built with Docusaurus.`,
     },
     prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
+      theme: prismThemes.oneLight,
+      darkTheme: prismThemes.oneDark,
     },
   } satisfies Preset.ThemeConfig,
 };
