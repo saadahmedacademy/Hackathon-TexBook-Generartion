@@ -76,3 +76,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Virtual environment setup folder
+.venv/
