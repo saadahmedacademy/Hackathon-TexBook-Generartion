@@ -1,0 +1,12 @@
+qdrant-client>=1.7.0
+cohere>=5.0.0
+requests
+beautifulsoup4
+markdownify
+langchain
+python-dotenv
+typer
+pydantic>=2.5
+fastapi>=0.110
+uvicorn
+google-generativeai

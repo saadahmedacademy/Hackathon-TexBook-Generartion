@@ -1,0 +1,183 @@
+openapi: 3.0.0
+info:
+  title: Agentic RAG Backend API
+  version: 1.0.0
+  description: API for the RAG-powered conversational agent for the ROS 2 Textbook.
+    Answers questions grounded in textbook content, supports code-aware reasoning,
+    and can generate Pytest tests.
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+tags:
+  - name: Chat
+    description: Endpoints for interacting with the RAG agent
+paths:
+  /chat/query:
+    post:
+      summary: Query the RAG agent
+      operationId: chatWithAgent
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              simpleQuestion:
+                summary: Simple question
+                value:
+                  question: "What is a ROS 2 node?"
+              codeAwareQuestion:
+                summary: Question with code context
+                value:
+                  question: "What does this code do?"
+                  code_block: |
+                    import rclpy
+                    from rclpy.node import Node
+
+                    class MinimalPublisher(Node):
+                        def __init__(self):
+                            super().__init__('minimal_publisher')
+                            self.publisher_ = self.create_publisher(String, 'topic', 10)
+                            timer_period = 0.5
+                            self.timer = self.create_timer(timer_period, self.timer_callback)
+                            self.i = 0
+                        def timer_callback(self):
+                            msg = String()
+                            msg.data = 'Hello World: %d' % self.i
+                            self.publisher_.publish(msg)
+                            self.get_logger().info('Publishing: "%s"' % msg.data)
+                            self.i += 1
+      responses:
+        '200':
+          description: Successful response from the agent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                groundedAnswer:
+                  summary: Grounded answer with citations
+                  value:
+                    answer: "A ROS 2 node is an executable that uses the ROS 2 client library to interface with the ROS 2 graph. Nodes can publish data to topics, subscribe to topics, provide services, and use client interfaces for services. For example, a `MinimalPublisher` node can publish 'Hello World' messages to a topic (Citation: /docs/module-2-nodes-topics-services/chapter-1, Section: ROS 2 Nodes). This allows different parts of a robot system to communicate and perform specific tasks (Citation: /docs/module-1-ros-foundations/chapter-1, Section: Core Concepts)."
+                    citations:
+                      - source_url: "/docs/module-2-nodes-topics-services/chapter-1"
+                        section_heading: "ROS 2 Nodes"
+                      - source_url: "/docs/module-1-ros-foundations/chapter-1"
+                        section_heading: "Core Concepts"
+                    refusal_reason: null
+                refusalAnswer:
+                  summary: Agent refusal to answer
+                  value:
+                    answer: "I cannot answer your question based on the available textbook content."
+                    citations: []
+                    refusal_reason: "Query out of scope or no relevant context found in the textbook."
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          description: The user's natural language question.
+          example: "What is a ROS 2 node?"
+        code_block:
+          type: string
+          nullable: true
+          description: An optional code snippet provided by the user for context.
+          example: |
+            import rclpy
+            from rclpy.node import Node
+    Citation:
+      type: object
+      required:
+        - source_url
+        - section_heading
+      properties:
+        source_url:
+          type: string
+          description: The URL to the source of the citation (e.g., textbook page).
+          example: "/docs/module-2-nodes-topics-services/chapter-1"
+        section_heading:
+          type: string
+          description: The heading of the section where the citation is found.
+          example: "ROS 2 Nodes"
+    ChatResponse:
+      type: object
+      required:
+        - answer
+        - citations
+      properties:
+        answer:
+          type: string
+          description: The agent's generated answer.
+          example: "A ROS 2 node is an executable that uses the ROS 2 client library to interface with the ROS 2 graph."
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Citation'
+          description: A list of citations supporting the answer.
+        refusal_reason:
+          type: string
+          nullable: true
+          description: If the agent refused to answer, this field explains why.
+          example: "Query out of scope or no relevant context found in the textbook."
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    ValidationError:
+      title: ValidationError
+      required:
+        - loc
+        - msg
+        - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
