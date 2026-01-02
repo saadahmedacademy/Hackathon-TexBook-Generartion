@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import ChatMessage from './ChatMessage';
 import { useChat } from './useChat';
-import { fetchChatResponse } from './apiClient';
+import { useChatApiUrl, fetchChatResponse } from './apiClient';
 import { handleCitationClick } from './utils';
 
 interface ChatWidgetProps {
@@ -16,6 +16,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose, selectedText }
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [contextualText, setContextualText] = useState('');
+  const apiUrl = useChatApiUrl();
 
   useEffect(() => {
     if (selectedText) {
@@ -40,14 +41,25 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose, selectedText }
     const agentMessageId = addMessage({ sender: 'agent' as const, text: '', isLoading: true });
 
     try {
-      const response = await fetchChatResponse({ question: inputValue, code_block: contextualText });
+      const response = await fetchChatResponse(apiUrl, { question: inputValue, code_block: contextualText });
+      
+      let messageText = response.answer;
+      if (response.status === "refused") {
+        messageText = response.refusal_reason || 'Sorry, I cannot answer that question.';
+      } else if (response.status === "system") {
+        messageText = response.answer;
+      }
+
       updateMessage(agentMessageId, { 
         isLoading: false, 
-        text: response.answer, 
+        text: messageText, 
         citations: response.citations,
-        isError: !!response.refusal_reason 
+        status: response.status,
+        refusalReason: response.refusal_reason,
+        isError: false 
       });
     } catch (error) {
+      console.error("Chat API error:", error);
       updateMessage(agentMessageId, { 
         isLoading: false, 
         text: 'Sorry, I encountered an error. Please try again.', 

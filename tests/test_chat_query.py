@@ -1,66 +1,75 @@
 import pytest
-from httpx import AsyncClient
+from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from src.backend.main import app
-from src.backend.models import ChatResponse, Citation
+from src.backend.main import app, agent_core
+from src.backend.models import ChatResponse, Document
+from src.retrieval.models import ContentChunk
 
-# Mock the RetrievalTool and GeminiAdapter
-@pytest.fixture
-def mock_retrieval_tool():
-    tool = MagicMock()
-    tool.name = "retrieve_textbook_context"
-    # Mock a successful retrieval
-    tool.return_value = '{"status": "success", "context": [{"text": "ROS 2 nodes are ...", "source_url": "/docs/node-basics", "section_heading": "ROS 2 Nodes"}]}'
-    return tool
+client = TestClient(app)
 
-@pytest.fixture
-def mock_gemini_adapter():
-    adapter = MagicMock()
-    # Mock a successful Gemini generation
-    adapter.generate.return_value = "A ROS 2 node is an executable that uses the ROS 2 client library. (Citation: /docs/node-basics, Section: ROS 2 Nodes)"
-    return adapter
-
-@pytest.mark.asyncio
-async def test_chat_query_grounded_answer(mock_retrieval_tool, mock_gemini_adapter):
+@patch('src.backend.agent_core.embed_query')
+@patch('src.backend.agent_core.search_qdrant')
+def test_chat_query_successful_rag(mock_search_qdrant, mock_embed_query):
     """
-    Test successful grounded Q&A with citations.
+    Test a successful RAG query where context is found and an answer is generated.
     """
-    with patch("src.backend.tools.RetrievalTool", return_value=mock_retrieval_tool):
-        with patch("src.backend.llm_adapter.GeminiAdapter", return_value=mock_gemini_adapter):
-            async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post("/chat/query", json={"question": "What is a ROS 2 node?"})
-            
-            assert response.status_code == 200
-            chat_response = ChatResponse(**response.json())
-            assert "ROS 2 node" in chat_response.answer
-            assert len(chat_response.citations) > 0
-            assert chat_response.refusal_reason is None
-            
-            mock_retrieval_tool.assert_called_once()
-            mock_gemini_adapter.generate.assert_called_once()
+    # Mock the inputs and outputs
+    mock_embed_query.return_value = [0.1, 0.2, 0.3]
+    mock_search_qdrant.return_value = [
+        ContentChunk(doc_id='doc1', source_url='/test', text='This is a test chunk.', score=0.9, metadata={})
+    ]
+    
+    with patch.object(agent_core, 'gemini_client', MagicMock()) as mock_gemini_client:
+        mock_gemini_client.query_llm.return_value = "This is a test answer."
 
-@patch("src.backend.tools.RetrievalTool")
-@patch("src.backend.llm_adapter.GeminiAdapter")
-@pytest.mark.asyncio
-async def test_chat_query_refusal_no_context(mock_gemini_adapter_cls, mock_retrieval_tool_cls):
+        # Make the request
+        response = client.post("/chat/query", json={"question": "What is a test?"})
+
+        # Assert the response
+        assert response.status_code == 200
+        chat_response = ChatResponse(**response.json())
+        assert chat_response.answer == "This is a test answer."
+        assert len(chat_response.citations) == 1
+        assert chat_response.citations[0].source_id == 'doc1'
+        assert chat_response.status == "success"
+
+@patch('src.backend.agent_core.embed_query')
+@patch('src.backend.agent_core.search_qdrant')
+def test_chat_query_empty_retrieval_refusal(mock_search_qdrant, mock_embed_query):
     """
-    Test agent refusal when retrieval tool returns no context.
+    Test the refusal mechanism when no relevant context is found.
     """
-    mock_retrieval_tool = mock_retrieval_tool_cls.return_value
-    mock_retrieval_tool.return_value = '{"status": "no_context", "message": "No relevant context found."}'
-    mock_gemini_adapter = mock_gemini_adapter_cls.return_value
-    mock_gemini_adapter.generate.return_value = "I cannot answer your question based on the available information."
+    # Mock the inputs and outputs
+    mock_embed_query.return_value = [0.1, 0.2, 0.3]
+    mock_search_qdrant.return_value = [] # No chunks found
 
-    with patch("src.backend.tools.RetrievalTool", return_value=mock_retrieval_tool):
-        with patch("src.backend.llm_adapter.GeminiAdapter", return_value=mock_gemini_adapter):
-            async with AsyncClient(app=app, base_url="http://test") as client:
-                response = await client.post("/chat/query", json={"question": "Tell me about advanced quantum physics."})
-            
-            assert response.status_code == 200
-            chat_response = ChatResponse(**response.json())
-            assert chat_response.answer == "I cannot answer your question based on the available information."
-            assert len(chat_response.citations) == 0
-            assert chat_response.refusal_reason == "No relevant context found for the query."
+    with patch.object(agent_core, 'gemini_client', MagicMock()) as mock_gemini_client:
+        # Make the request
+        response = client.post("/chat/query", json={"question": "An obscure question."
+        })
 
-            mock_retrieval_tool.assert_called_once()
-            mock_gemini_adapter.generate.assert_called_once()
+        # Assert the response
+        assert response.status_code == 200
+        chat_response = ChatResponse(**response.json())
+        assert chat_response.answer == ""
+        assert len(chat_response.citations) == 0
+        assert chat_response.status == "refused"
+        assert chat_response.refusal_reason is not None
+        
+        # Ensure Gemini was not called
+        mock_gemini_client.query_llm.assert_not_called()
+
+def test_chat_query_greeting():
+    """
+    Test the system's response to a simple greeting.
+    """
+    # Make the request
+    response = client.post("/chat/query", json={"question": "hello"})
+
+    # Assert the response
+    assert response.status_code == 200
+    chat_response = ChatResponse(**response.json())
+    assert "Hi! I can help" in chat_response.answer
+    assert len(chat_response.citations) == 0
+    assert chat_response.status == "system"
+    assert chat_response.refusal_reason is None

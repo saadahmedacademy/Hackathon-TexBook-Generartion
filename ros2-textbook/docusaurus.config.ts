@@ -14,6 +14,10 @@ const config: Config = {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
   },
 
+  customFields: {
+    chatApiUrl: process.env.DOCUSAURUS_CHAT_API_URL || 'http://127.0.0.1:8000',
+  },
+
   // Set the production url of your site here
   url: 'https://hackathon-tex-book-generartion.vercel.app/',
   // Set the /<baseUrl>/ pathname under which your site is served

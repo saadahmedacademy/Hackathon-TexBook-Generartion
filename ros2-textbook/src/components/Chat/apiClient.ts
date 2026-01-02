@@ -1,3 +1,5 @@
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+
 // Define request and response payloads based on data-model.md
 export interface ChatRequestPayload {
     question: string;
@@ -13,12 +15,17 @@ export interface ChatResponsePayload {
     answer: string;
     citations: Citation[];
     refusal_reason?: string | null;
+    status: string;
 }
 
-const API_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000';
+export function useChatApiUrl(): string {
+  const { siteConfig } = useDocusaurusContext();
+  // Ensure customFields and chatApiUrl exist, with a fallback
+  return (siteConfig.customFields?.chatApiUrl as string) || 'http://127.0.0.1:8000';
+}
 
-export const fetchChatResponse = async (payload: ChatRequestPayload): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${API_URL}/chat/query`, {
+export const fetchChatResponse = async (apiUrl: string, payload: ChatRequestPayload): Promise<ChatResponsePayload> => {
+    const response = await fetch(`${apiUrl}/chat/query`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

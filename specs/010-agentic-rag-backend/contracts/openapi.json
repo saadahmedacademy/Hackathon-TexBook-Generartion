@@ -1,0 +1,80 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Agentic RAG Backend API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/chat/query": {
+      "post": {
+        "summary": "Query the RAG Agent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Query"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Query": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "code_block": {
+            "type": "string"
+          }
+        },
+        "required": ["question"]
+      },
+      "Response": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            }
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "Document": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

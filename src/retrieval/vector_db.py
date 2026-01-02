@@ -1,13 +1,19 @@
-from qdrant_client import QdrantClient, models as qdrant_models
+from qdrant_client import QdrantClient
 from typing import List
-from ..retrieval.config import QDRANT_URL
+from ..retrieval.config import QDRANT_URL, QDRANT_API_KEY
 from ..retrieval.retry_decorator import retry
 from ..retrieval.models import ContentChunk
 import logging
 
-def get_qdrant_client():
+
+def get_qdrant_client() -> QdrantClient:
     """Initializes and returns the Qdrant client."""
-    return QdrantClient(url=QDRANT_URL)
+    return QdrantClient(
+        url=QDRANT_URL,
+        api_key=QDRANT_API_KEY,
+        check_compatibility=False,
+    )
+
 
 @retry(tries=3, delay=5, backoff=2)
 def search_qdrant(
@@ -18,36 +24,45 @@ def search_qdrant(
     score_threshold: float,
 ) -> List[ContentChunk]:
     """
-    Performs a similarity search against the Qdrant collection.
+    Searches Qdrant for similar vectors and returns matched content chunks.
     """
+
     try:
+        # Correct API call for Qdrant v1.16.x
         search_result = client.search(
             collection_name=collection_name,
             query_vector=query_vector,
             limit=limit,
-            score_threshold=score_threshold,
             with_payload=True,
-            with_vectors=False,
+            score_threshold=score_threshold,
         )
-        
-        chunks = []
+
+        chunks: List[ContentChunk] = []
+
         for hit in search_result:
-            # Ensure payload exists and convert to ContentChunk
-            if hit.payload:
-                chunks.append(
-                    ContentChunk(
-                        doc_id=hit.payload.get("doc_id"),
-                        source_url=hit.payload.get("source_url"),
-                        text=hit.payload.get("original_text"), # Use original_text from ingestion
-                        score=hit.score,
-                        metadata=hit.payload # Keep full payload as metadata
-                    )
+            if not hit.payload:
+                continue
+
+            chunks.append(
+                ContentChunk(
+                    doc_id=hit.payload.get("doc_id"),
+                    source_url=hit.payload.get("source_url"),
+                    text=hit.payload.get("original_text"),
+                    score=hit.score,
+                    metadata=hit.payload,
                 )
+            )
+
         logging.info(f"Found {len(chunks)} relevant chunks in Qdrant.")
         return chunks
+
     except Exception as e:
-        logging.error(f"Error searching Qdrant collection '{collection_name}': {e}")
-        raise e
+        logging.error(
+            f"Error searching Qdrant collection '{collection_name}': {e}",
+            exc_info=True,
+        )
+        raise
+
 
 def check_collection_exists(client: QdrantClient, collection_name: str) -> bool:
     """Checks if a Qdrant collection exists."""
@@ -55,5 +70,7 @@ def check_collection_exists(client: QdrantClient, collection_name: str) -> bool:
         client.get_collection(collection_name=collection_name)
         return True
     except Exception as e:
-        logging.warning(f"Collection '{collection_name}' does not exist or is inaccessible: {e}")
+        logging.warning(
+            f"Collection '{collection_name}' does not exist or is inaccessible: {e}"
+        )
         return False
