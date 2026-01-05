@@ -1,18 +1,18 @@
 from qdrant_client import QdrantClient, models as qdrant_models
 from typing import List
-from .config import QDRANT_URL
+from .config import QDRANT_URL, QDRANT_API_KEY
 from .models import ContentChunk
 from .chunker import generate_deterministic_id
 import logging
 
 def get_qdrant_client():
     """Initializes and returns the Qdrant client."""
-    return QdrantClient(url=QDRANT_URL)
+    return QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
-def create_collection(client: QdrantClient, collection_name: str, vector_size: int = 1024):
+def create_collection(client: QdrantClient, collection_name: str, vector_size: int = 384):
     """
     Creates a new collection in Qdrant if it doesn't already exist.
-    Cohere's embed-english-v3.0 has a dimension of 1024.
+    The `all-MiniLM-L6-v2` model has a dimension of 384.
     """
     try:
         client.get_collection(collection_name=collection_name)

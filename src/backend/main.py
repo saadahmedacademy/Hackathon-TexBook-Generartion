@@ -3,6 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models import Query, ChatResponse
 from .agent_core import AgentCore
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(

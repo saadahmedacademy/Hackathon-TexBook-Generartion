@@ -1,4 +1,5 @@
 from qdrant_client import QdrantClient
+from qdrant_client.models import SearchParams, VectorParams, Distance
 from typing import List
 from ..retrieval.config import QDRANT_URL, QDRANT_API_KEY
 from ..retrieval.retry_decorator import retry
@@ -7,7 +8,6 @@ import logging
 
 
 def get_qdrant_client() -> QdrantClient:
-    """Initializes and returns the Qdrant client."""
     return QdrantClient(
         url=QDRANT_URL,
         api_key=QDRANT_API_KEY,
@@ -23,33 +23,29 @@ def search_qdrant(
     limit: int,
     score_threshold: float,
 ) -> List[ContentChunk]:
-    """
-    Searches Qdrant for similar vectors and returns matched content chunks.
-    """
 
     try:
-        # Correct API call for Qdrant v1.16.x
-        search_result = client.search(
+        result = client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=limit,
             with_payload=True,
             score_threshold=score_threshold,
+            search_params=SearchParams(exact=False),
         )
 
         chunks: List[ContentChunk] = []
 
-        for hit in search_result:
-            if not hit.payload:
-                continue
+        for point in result.points:
+            payload = point.payload or {}
 
             chunks.append(
                 ContentChunk(
-                    doc_id=hit.payload.get("doc_id"),
-                    source_url=hit.payload.get("source_url"),
-                    text=hit.payload.get("original_text"),
-                    score=hit.score,
-                    metadata=hit.payload,
+                    doc_id=payload.get("doc_id"),
+                    source_url=payload.get("source_url"),
+                    text=payload.get("original_text"),
+                    score=point.score,
+                    metadata=payload,
                 )
             )
 
@@ -65,7 +61,6 @@ def search_qdrant(
 
 
 def check_collection_exists(client: QdrantClient, collection_name: str) -> bool:
-    """Checks if a Qdrant collection exists."""
     try:
         client.get_collection(collection_name=collection_name)
         return True
@@ -73,4 +68,25 @@ def check_collection_exists(client: QdrantClient, collection_name: str) -> bool:
         logging.warning(
             f"Collection '{collection_name}' does not exist or is inaccessible: {e}"
         )
+        return False
+
+def recreate_collection(client: QdrantClient, collection_name: str, vector_size: int, distance: Distance = Distance.COSINE):
+    """
+    Deletes a collection if it exists and creates it with the specified configuration.
+    """
+    try:
+        if check_collection_exists(client, collection_name):
+            logging.info(f"Deleting existing collection '{collection_name}'...")
+            client.delete_collection(collection_name=collection_name)
+            logging.info(f"Collection '{collection_name}' deleted.")
+
+        logging.info(f"Creating collection '{collection_name}' with vector size {vector_size}...")
+        client.recreate_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=vector_size, distance=distance),
+        )
+        logging.info(f"Collection '{collection_name}' created successfully.")
+        return True
+    except Exception as e:
+        logging.error(f"Error recreating Qdrant collection '{collection_name}': {e}", exc_info=True)
         return False

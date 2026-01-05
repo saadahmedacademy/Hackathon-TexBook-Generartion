@@ -1,26 +1,51 @@
-import cohere
+from sentence_transformers import SentenceTransformer
 from typing import List
-from ..retrieval.config import COHERE_API_KEY
-from ..retrieval.retry_decorator import retry
 import logging
 
-def get_cohere_client():
-    """Initializes and returns the Cohere client."""
-    return cohere.Client(COHERE_API_KEY)
+# Initialize the SentenceTransformer model as a singleton instance.
+# This ensures the model is loaded only once when the module is imported.
+try:
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    logging.info("SentenceTransformer model 'all-MiniLM-L6-v2' loaded successfully.")
+except Exception as e:
+    logging.error(f"Failed to load SentenceTransformer model: {e}")
+    model = None
 
-@retry(tries=3, delay=10, backoff=2)
-def embed_query(client: cohere.Client, text: str) -> List[float]:
+def embed_query(text: str) -> List[float]:
     """
-    Embeds a single query string using the Cohere API.
+    Embeds a single query string using the local SentenceTransformer model.
+
+    Args:
+        text: The input string to embed.
+
+    Returns:
+        A list of floats representing the embedding.
+        Returns an empty list if the model is not loaded.
     """
+    if not model:
+        logging.error("SentenceTransformer model is not available. Cannot embed query.")
+        return []
+
     try:
-        response = client.embed(
-            texts=[text],
-            model="embed-english-v3.0",
-            input_type="search_query"
-        )
+        # The model.encode() method returns a numpy array, which we convert to a list.
+        embedding = model.encode(text, convert_to_tensor=False).tolist()
         logging.info(f"Successfully embedded query: '{text[:50]}...'")
-        return response.embeddings[0]
-    except cohere.CohereError as e:
-        logging.error(f"Error embedding query with Cohere: {e}")
-        raise e
+        return embedding
+    except Exception as e:
+        logging.error(f"Error embedding query with SentenceTransformer: {e}")
+        # Depending on the desired error handling, you might want to raise the exception
+        # or return an empty list to indicate failure.
+        return []
+
+# Example of how to use the embedder:
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    sample_query = "What is the capital of France?"
+    embedding_vector = embed_query(sample_query)
+
+    if embedding_vector:
+        print(f"Query: {sample_query}")
+        print(f"Embedding dimension: {len(embedding_vector)}")
+        # print(f"Embedding vector (first 5 dimensions): {embedding_vector[:5]}")
+    else:
+        print("Failed to generate embedding.")

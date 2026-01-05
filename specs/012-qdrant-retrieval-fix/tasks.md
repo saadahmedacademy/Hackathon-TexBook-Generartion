@@ -1,34 +1,59 @@
-# Tasks for Feature: Fix Qdrant Retrieval Crash
+---
+description: "Task list for fixing Qdrant vector dimension mismatch"
+---
 
-This document outlines the tasks required to fix the Qdrant retrieval crash caused by a deprecated client API and to improve error handling.
+# Tasks: 012-qdrant-retrieval-fix
 
-## Implementation Strategy
-
-The fix involves updating the `search_qdrant` function in `src/retrieval/vector_db.py` to use the current `qdrant-client` API. Error handling will be improved to prevent exceptions from propagating and causing HTTP 500 errors, ensuring that retrieval failures result in a structured refusal response.
-
-## Dependencies
-
-This is a self-contained fix with no dependencies on other user stories.
+**Goal**: Fix the system so that embedding generation and Qdrant collection dimensions match perfectly, without data corruption. The current error is "Vector dimension error: expected dim: 1024, got 384".
 
 ---
 
-### Phase 1: Investigation
+## Phase 1: Investigation & Analysis
 
-- [ ] T001 Review `src/retrieval/vector_db.py` to confirm the `search_qdrant` function signature and its usage of `QdrantClient.search`.
+**Purpose**: Identify the root cause of the dimension mismatch by inspecting the Qdrant collection and the embedding model configuration.
+
+- [X] T001 Read `src/retrieval/vector_db.py` to understand how the Qdrant client is initialized and used to create collections.
+- [X] T002 Read `src/retrieval/config.py` and `src/backend/config.py` to find the Qdrant connection details and any configured collection parameters.
+- [X] T003 Create a temporary script `scripts/diagnose_qdrant.py` to connect to the Qdrant database and retrieve the configuration of the `ros2_textbook_v1` collection, specifically its vector size.
+- [X] T004 Execute the script `scripts/diagnose_qdrant.py` and log the output to confirm the collection's vector dimension.
+- [X] T005 Read `src/retrieval/embedder.py` to identify the sentence-transformer model being used for generating embeddings.
+- [X] T006 Analyze the model identified in `src/retrieval/embedder.py` to confirm its output vector dimension (expected to be 384).
+
+**Checkpoint**: At this point, we should have confirmed that the Qdrant collection expects 1024-dimension vectors while the embedding model produces 384-dimension vectors.
 
 ---
 
-### Phase 2: Implementation
+## Phase 2: Remediation
 
-- [ ] T002 Update the `search_qdrant` function signature in `src/retrieval/vector_db.py` to use the current `QdrantClient.search(collection_name, query_vector, limit, with_payload)` API, removing deprecated parameters.
-- [ ] T003 Modify the error handling in `search_qdrant` in `src/retrieval/vector_db.py` to log the error and return an empty list `[]` instead of re-raising the exception.
-- [ ] T004 Review `src/backend/agent_core.py` and update the call to `search_qdrant` to match the new function signature.
-- [ ] T005 Verify that `src/backend/agent_core.py` correctly handles an empty list from `search_qdrant` by returning a `ChatResponse` with a `refusal_reason`.
+**Purpose**: Apply the fix by recreating the Qdrant collection with the correct vector dimension and re-ingesting the data.
+
+- [X] T007 Modify `src/retrieval/vector_db.py` to update the collection creation logic, changing the hardcoded vector size from 1024 to 384 to match the embedding model.
+- [X] T008 Create a temporary script `scripts/recreate_collection.py` that safely deletes and recreates the `ros2_textbook_v1` collection using the corrected logic from `src/retrieval/vector_db.py`.
+- [X] T009 Execute the `scripts/recreate_collection.py` script to apply the schema change to the Qdrant database.
+- [X] T010 Identify the data ingestion process. Based on the file structure, this is likely initiated from `src/pipelines/ingestion/`.
+- [X] T011 Trigger the data ingestion pipeline to re-populate the `ros2_textbook_v1` collection with correctly sized vector embeddings.
+
+**Checkpoint**: The Qdrant collection `ros2_textbook_v1` should now be populated with data and configured with a vector size of 384.
 
 ---
 
-### Phase 3: Validation
+## Phase 3: Verification
 
-- [ ] T006 Update unit tests in `tests/test_chat_query.py` to reflect the changes in `search_qdrant`.
-- [ ] T007 Add a new test case to `tests/test_chat_query.py` that mocks `search_qdrant` to throw an exception, and assert that the `POST /chat/query` endpoint returns a 200 status with a refusal.
-- [ ] T008 Run all tests to ensure the fix works and no regressions were introduced.
+**Purpose**: Verify that the fix has resolved the dimension mismatch error and the system is fully functional.
+
+- [X] T012 Run the test suite in `tests/test_retrieval.py` to ensure that search queries against the new collection are successful.
+- [X] T013 Run the end-to-end test in `tests/test_chat_query.py` to confirm the `/chat/query` API endpoint returns a successful response (HTTP 200).
+- [X] T014 Manually perform a query via the API if possible, to double-check the functionality.
+
+**Checkpoint**: The dimension mismatch error is gone, and the chat functionality is working as expected.
+
+---
+
+## Phase 4: Cleanup
+
+**Purpose**: Remove temporary scripts and finalize the changes.
+
+- [X] T015 Delete the temporary script `scripts/diagnose_qdrant.py`.
+- [X] T016 Delete the temporary script `scripts/recreate_collection.py`.
+- [X] T017 Review the changes made to `src/retrieval/vector_db.py` and other files, ensuring they are clean and production-ready.
+- [ ] T018 Create a commit with the changes, summarizing the fix for the Qdrant dimension mismatch.

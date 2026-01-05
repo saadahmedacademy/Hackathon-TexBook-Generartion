@@ -1,5 +1,6 @@
 import hashlib
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import uuid
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List
 from .models import ContentChunk, QdrantPayload
 
@@ -44,6 +45,6 @@ def chunk_text(markdown_content: str, url: str, module: str, chapter: str, chunk
 
 def generate_deterministic_id(url: str, content: str) -> str:
     """
-    Generates a deterministic SHA256 hash for a chunk to be used as its ID.
+    Generates a deterministic UUID for a chunk to be used as its ID.
     """
-    return hashlib.sha256(f"{url}{content}".encode("utf-8")).hexdigest()
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{url}{content}"))
