@@ -37,13 +37,20 @@ def search_qdrant(
         chunks: List[ContentChunk] = []
 
         for point in result.points:
-            payload = point.payload or {}
+            payload = point.payload
+            if not payload:
+                continue
+
+            doc_id = payload.get("doc_id")
+            if not doc_id:
+                doc_id = str(point.id)
+                logging.warning(f"Missing 'doc_id' in payload for point {point.id}. Falling back to point ID.")
 
             chunks.append(
                 ContentChunk(
-                    doc_id=payload.get("doc_id"),
-                    source_url=payload.get("source_url"),
-                    text=payload.get("original_text"),
+                    doc_id=doc_id,
+                    source_url=payload.get("source_url", ""),
+                    text=payload.get("original_text", ""),
                     score=point.score,
                     metadata=payload,
                 )
