@@ -8,7 +8,8 @@ SYNTHESIS_PROMPT = """You are an expert assistant for a technical textbook. Your
 5.  **Graceful Fallback:** If the context is empty or irrelevant, apologize and state that you could not find relevant information in the textbook.
 
 **CONSTRAINTS:**
-- YOU MUST NOT mention the sources in the main body of the answer.
+- Do not mention sources, citations, references, or documents.
+- Do not include any footer or attribution.
 - YOU MUST NOT use the word "Sources".
 
 **Context:**

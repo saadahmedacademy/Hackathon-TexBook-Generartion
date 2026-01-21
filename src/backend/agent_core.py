@@ -21,6 +21,8 @@ class AgentCore:
             "hi", "hello", "hey", "hi!", "hello!", "hey!",
             "good morning", "good afternoon", "good evening",
         }
+        self.identity_questions = {"what is your name", "what's your name", "who are you"}
+        self.vague_terms = {"ros", "ros 2", "robotics"}
         self.conversational_questions = {
             "how are you", "how are you doing", "how's it going",
             "what's up", "what are you",
@@ -64,13 +66,31 @@ class AgentCore:
             return ChatResponse(
                 answer="Hi! I can help you with questions about the ROS 2 textbook. What would you like to learn?",
                 status="system",
+                citations=[],
                 refusal_reason=None,
             )
         
+        if normalized_question in self.identity_questions:
+            return ChatResponse(
+                answer="I am a helpful assistant for the ROS 2 textbook, designed by Spec-Collective.",
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
+        if normalized_question in self.vague_terms:
+            return ChatResponse(
+                answer="That's a very general question. Could you be more specific about what you'd like to know regarding ROS 2 or robotics? I have access to a textbook that might have the answer.",
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
         if normalized_question in self.conversational_questions:
             return ChatResponse(
                 answer="I am a helpful assistant for the ROS 2 textbook. I can answer your questions about ROS 2.",
                 status="system",
+                citations=[],
                 refusal_reason=None,
             )
 
@@ -84,6 +104,7 @@ class AgentCore:
             return ChatResponse(
                 answer="",
                 status="refused",
+                citations=[],
                 refusal_reason=f"I cannot provide information for Module {module_num} as it is not part of the indexed textbook content. Please specify a valid module number (1-6).",
             )
 
@@ -95,6 +116,7 @@ class AgentCore:
             return ChatResponse(
                 answer="",
                 status="error",
+                citations=[],
                 refusal_reason="Failed to generate embeddings. Please try again.",
             )
 
@@ -103,6 +125,7 @@ class AgentCore:
             return ChatResponse(
                 answer="",
                 status="error",
+                citations=[],
                 refusal_reason="Knowledge base is not initialized yet.",
             )
 
@@ -125,6 +148,7 @@ class AgentCore:
             return ChatResponse(
                 answer="",
                 status="refused",
+                citations=[],
                 refusal_reason="I could not find any relevant information in the ROS 2 textbook for your query. Please try rephrasing your question or making it more specific.",
             )
 
@@ -154,7 +178,7 @@ class AgentCore:
         llm_response = self.gemini_client.query_llm(prompt)
 
         # ---- 7. Format sources & final response ----
-        final_answer = llm_response
+        final_answer = re.split(r'^\s*(Sources|Source|References|Citations):', llm_response, flags=re.MULTILINE | re.IGNORECASE)[0].strip()
 
         citations = [
             Document(source_id=chunk.doc_id, content=chunk.text, title=chunk.metadata.get("title"))
