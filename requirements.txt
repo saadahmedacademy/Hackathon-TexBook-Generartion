@@ -9,5 +9,5 @@ python-dotenv
 typer
 pydantic>=2.5
 fastapi>=0.110
-uvicorn
+uvicorn[standard]
 google-genai
