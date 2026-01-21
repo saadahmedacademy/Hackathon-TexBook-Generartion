@@ -25,7 +25,7 @@ As a backend system, I want to receive a user query, convert it to an embedding,
 
 -   **FR-001**: The system MUST provide a module for retrieving text chunks.
 -   **FR-002**: The module MUST accept a string query as input.
--   **FR-003**: The module MUST generate a query embedding using the Cohere API.
+-   **FR-003**: The module MUST generate a query embedding.
 -   **FR-004**: The module MUST perform a similarity search in the Qdrant collection.
 -   **FR-005**: The retrieval process MUST be deterministic for a given query and dataset.
 -   **FR-006**: The system MUST enforce a configurable score threshold to filter out irrelevant results.

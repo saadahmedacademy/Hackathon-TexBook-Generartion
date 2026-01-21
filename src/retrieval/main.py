@@ -24,7 +24,6 @@ def retrieve_context(
     logging.info(f"Retrieving context for query: '{query_text[:50]}...'")
 
     qdrant_client = vector_db.get_qdrant_client()
-    cohere_client = embedder.get_cohere_client()
 
     # Validate Qdrant collection existence
     if not vector_db.check_collection_exists(qdrant_client, collection_name):
@@ -33,7 +32,7 @@ def retrieve_context(
 
     try:
         # Embed the query
-        query_vector = embedder.embed_query(cohere_client, query_text)
+        query_vector = embedder.embed_query(query_text)
 
         # Search Qdrant
         chunks = vector_db.search_qdrant(

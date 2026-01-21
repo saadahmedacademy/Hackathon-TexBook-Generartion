@@ -7,7 +7,7 @@ This guide provides a practical, executable example of how to use the retrieval 
 The module's dependencies will be managed via `requirements.txt`.
 
 ```bash
-pip install qdrant-client cohere python-dotenv pydantic
+pip install qdrant-client sentence-transformers python-dotenv pydantic
 ```
 
 ## Usage
@@ -23,7 +23,6 @@ from src.retrieval.models import RetrievedContext
 # --- Setup ---
 # In a real application, this would be handled by your application's entry point.
 load_dotenv()
-os.environ["COHERE_API_KEY"] = "your_cohere_api_key"  # Replace with a valid key
 os.environ["QDRANT_URL"] = "http://localhost:6333"   # Replace with your Qdrant URL
 
 # --- Execution ---

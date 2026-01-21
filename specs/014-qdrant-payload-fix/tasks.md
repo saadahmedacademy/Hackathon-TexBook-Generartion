@@ -56,4 +56,4 @@ description: "Task list for fixing Qdrant retrieval crashes due to invalid paylo
 **Purpose**: Remove temporary scripts and finalize the changes for commit.
 
 - [X] T013 Delete the diagnostic script `scripts/check_payload_integrity.py`.
-- [ ] T014 Create a commit with the changes, summarizing the fix for the payload handling.
+- [X] T014 Create a commit with the changes, summarizing the fix for the payload handling.

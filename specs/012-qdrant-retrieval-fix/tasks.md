@@ -56,4 +56,4 @@ description: "Task list for fixing Qdrant vector dimension mismatch"
 - [X] T015 Delete the temporary script `scripts/diagnose_qdrant.py`.
 - [X] T016 Delete the temporary script `scripts/recreate_collection.py`.
 - [X] T017 Review the changes made to `src/retrieval/vector_db.py` and other files, ensuring they are clean and production-ready.
-- [ ] T018 Create a commit with the changes, summarizing the fix for the Qdrant dimension mismatch.
+- [X] T018 Create a commit with the changes, summarizing the fix for the Qdrant dimension mismatch.

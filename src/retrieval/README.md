@@ -1,12 +1,12 @@
 # Retrieval Module
 
-This module provides functionality to retrieve relevant content chunks from a Qdrant vector database based on a natural language query. It utilizes Cohere embeddings for semantic search.
+This module provides functionality to retrieve relevant content chunks from a Qdrant vector database based on a natural language query. It utilizes sentence-transformers for semantic search.
 
 ## Overview
 
 The core functionality is exposed via the `retrieve_context` function, which performs the following steps:
 1.  Takes a user query as input.
-2.  Generates an embedding for the query using the Cohere API.
+2.  Generates an embedding for the query using a local sentence-transformer model.
 3.  Connects to a Qdrant instance.
 4.  Performs a similarity search against a specified Qdrant collection.
 5.  Filters results based on configurable `top_k` and `score_threshold` parameters.
@@ -18,7 +18,7 @@ The core functionality is exposed via the `retrieve_context` function, which per
 Ensure you have the necessary dependencies installed. You can add them to your `requirements.txt`:
 ```
 qdrant-client
-cohere
+sentence-transformers
 python-dotenv
 pydantic
 ```
@@ -31,9 +31,6 @@ pip install -r requirements.txt
 Create a `.env` file in the project root or export the following environment variables:
 
 ```bash
-# Your Cohere API Key
-COHERE_API_KEY="your_cohere_api_key"
-
 # The URL for your Qdrant instance
 QDRANT_URL="http://localhost:6333" # e.g., for local Qdrant
 # or for Qdrant Cloud: QDRANT_URL="https://[YOUR_QDRANT_CLUSTER_URL]"

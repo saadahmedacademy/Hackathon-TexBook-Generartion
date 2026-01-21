@@ -15,8 +15,8 @@ The implementation will follow a modular, phased approach. We will first set up 
 **Goal**: Initialize the project structure, dependencies, and configuration management.
 
 - [X] T001 Create the root directory for the retrieval module at `src/retrieval/`.
-- [X] T002 Update the global `requirements.txt` (or create a new one for this module) to add `qdrant-client`, `cohere`, `python-dotenv`, `pydantic`.
-- [X] T003 Implement a configuration module in `src/retrieval/config.py` to load environment variables (COHERE_API_KEY, QDRANT_URL, QDRANT_COLLECTION_NAME) using `python-dotenv`.
+- [X] T002 Update the global `requirements.txt` (or create a new one for this module) to add `qdrant-client`, `sentence-transformers`, `python-dotenv`, `pydantic`.
+- [X] T003 Implement a configuration module in `src/retrieval/config.py` to load environment variables (QDRANT_URL, QDRANT_COLLECTION_NAME) using `python-dotenv`.
 - [X] T004 Create an `__init__.py` inside `src/retrieval/` to make it a Python package.
 
 ---
@@ -36,14 +36,14 @@ The implementation will follow a modular, phased approach. We will first set up 
 **Independent Test**: The module can be tested by providing a set of mock queries and validating the deterministic output of retrieved chunks against expected results, adhering to `top_k` and `score_threshold`.
 
 ### Test Tasks
-- [X] T007 [US1] Create a test file `tests/test_retrieval.py` for the retrieval module. This test will use mock Cohere and Qdrant clients to verify:
-    - Correct query embedding using `input_type="search_query"`.
+- [X] T007 [US1] Create a test file `tests/test_retrieval.py` for the retrieval module. This test will use a mock Qdrant client to verify:
+    - Correct query embedding.
     - Correct application of `top_k` and `score_threshold` filters.
     - Deterministic output for identical inputs.
     - Graceful handling of empty results.
 
 ### Implementation Tasks
-- [X] T008 [P] [US1] Implement the `embedder` module in `src/retrieval/embedder.py`. This module will wrap the Cohere client, handle authentication, and expose a function to embed a single query string using the `embed-english-v3.0` model with `input_type="search_query"`. Apply the retry decorator.
+- [X] T008 [P] [US1] Implement the `embedder` module in `src/retrieval/embedder.py`. This module will wrap the `sentence-transformers` model, and expose a function to embed a single query string.
 - [X] T009 [P] [US1] Implement the `vector_db` module in `src/retrieval/vector_db.py`. This module will wrap the Qdrant client, handle client initialization, and expose a function to perform a similarity search (`qdrant_client.search()`) with configurable `limit`, `score_threshold`, and `with_payload=True`. Apply the retry decorator.
 - [X] T010 [US1] Implement the main `retrieve_context` function in `src/retrieval/main.py`. This function will orchestrate the calls to the `embedder` and `vector_db` modules, process their results, and return a `RetrievedContext` object. It should validate the Qdrant collection's existence on startup.
 

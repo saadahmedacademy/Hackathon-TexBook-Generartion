@@ -213,7 +213,9 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 - Files (Markdown `.md` files for content) (002-ros2-textbook-chapter)
 - Python 3.11 + FastAPI, uvicorn (010-agentic-rag-backend)
 - N/A (Stateless) (010-agentic-rag-backend)
-- Python 3.11 + FastAPI, Uvicorn, Cohere, Qdrant (010-agentic-rag-backend)
+- Python 3.11 + FastAPI, uvicorn, sentence-transformers, qdrant-client (010-agentic-rag-backend)
+- Qdrant for vector storage. (010-agentic-rag-backend)
+- N/A (Stateless per request) (010-agentic-rag-backend)
 
 ## Recent Changes
 - 002-ros2-textbook-chapter: Added Files (Markdown `.md` files for content)

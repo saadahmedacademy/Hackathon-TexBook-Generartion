@@ -14,7 +14,7 @@ The pipeline will be a Python script that orchestrates the end-to-end process of
 2.  **Parse**: For each page, parse the HTML to extract the main article content, stripping away navigation, sidebars, and footers.
 3.  **Convert**: Convert the cleaned HTML for each page into Markdown format to restore a structured text representation.
 4.  **Chunk**: Segment the Markdown text into deterministic chunks of 512 tokens with a 50-token overlap.
-5.  **Embed**: Generate embeddings for each chunk using the Cohere API.
+5.  **Embed**: Generate embeddings for each chunk using `sentence-transformers`.
 6.  **Store**: Upsert the vectors and their rich metadata into a versioned Qdrant collection.
 
 This approach is chosen because it decouples the ingestion pipeline from the Docusaurus source code repository, treating the deployed website as the canonical source of truth, per the user's constraint.
@@ -25,14 +25,14 @@ This approach is chosen because it decouples the ingestion pipeline from the Doc
 -   **Web Crawling/Parsing**: `requests` for HTTP calls, `BeautifulSoup4` for HTML parsing.
 -   **HTML to Markdown**: `markdownify` library to convert HTML back to structured Markdown.
 -   **Chunking**: LangChain's `RecursiveCharacterTextSplitter` for deterministic, token-based chunking.
--   **Embedding**: `cohere` Python SDK.
+-   **Embedding**: `sentence-transformers` Python SDK.
 -   **Vector Database Client**: `qdrant-client` Python SDK.
 
 ### 1.3. Dependencies & Integration Points
 
 -   **Upstream**: A publicly accessible URL for the deployed Docusaurus textbook on Vercel.
 -   **Downstream**: The Qdrant collection produced by this pipeline will be consumed by the `008-retrieval-validation-layer`.
--   **External**: Requires network access to the Vercel URL, Cohere API, and the Qdrant database. API keys and URLs will be managed via environment variables.
+-   **External**: Requires network access to the Vercel URL and the Qdrant database. API keys and URLs will be managed via environment variables.
 
 ### 1.4. Unresolved Questions
 
@@ -71,10 +71,8 @@ This phase will produce the core design artifacts.
 
 -   **Risk**: The Docusaurus website's HTML structure changes, breaking the parsing logic.
     -   **Mitigation**: The script will have robust error handling. If a page cannot be parsed, it will be logged and skipped, allowing the rest of the ingestion to complete. The CSS selectors will be configurable.
--   **Risk**: API rate limits from Cohere.
-    -   **Mitigation**: Implement exponential backoff and retry logic in the Cohere client wrapper. Process embeddings in batches with optional delays.
--   **Risk**: Inaccurate token counting leading to chunks larger than Cohere's model limit.
-    -   **Mitigation**: Use a tokenizer library (like `tiktoken` with a proxy configuration) that closely matches Cohere's tokenization to ensure chunk size limits are respected.
+-   **Risk**: Inaccurate token counting leading to chunks larger than the model's limit.
+    -   **Mitigation**: Use a tokenizer library that closely matches the `sentence-transformers` model's tokenization to ensure chunk size limits are respected.
 
 ## 5. Constitution Check (Post-Design)
 

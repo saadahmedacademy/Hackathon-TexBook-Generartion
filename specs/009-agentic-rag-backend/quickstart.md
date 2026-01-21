@@ -6,14 +6,13 @@ This guide demonstrates how to set up, run, and interact with the Agentic RAG Ba
 
 ### a. Prerequisites
 -   Python 3.11+
--   `COHERE_API_KEY` (for retrieval embeddings)
 -   `GEMINI_API_KEY` (for LLM calls)
 -   A running Qdrant instance with an ingested textbook collection (from Feature `007-content-ingestion-pipeline`)
 
 ### b. Install Dependencies
 
 ```bash
-pip install "fastapi[all]" openai-agent-sdk google-generativeai qdrant-client cohere python-dotenv uvicorn
+pip install "fastapi[all]" openai-agent-sdk google-generativeai qdrant-client sentence-transformers python-dotenv uvicorn
 ```
 *(Note: `openai-agent-sdk` is a placeholder. The actual package name might vary or a custom adapter will be used.)*
 
@@ -23,9 +22,6 @@ Create a `.env` file in the project root or export the following environment var
 ```bash
 # Your Gemini API Key
 export GEMINI_API_KEY="your_gemini_api_key"
-
-# Your Cohere API Key (used by the Retrieval Layer)
-export COHERE_API_KEY="your_cohere_api_key"
 
 # The URL for your Qdrant instance (used by the Retrieval Layer)
 export QDRANT_URL="http://localhost:6333"

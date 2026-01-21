@@ -26,7 +26,7 @@ As a system administrator, I want to run a script that automatically crawls the 
 -   **FR-001**: The system MUST provide a runnable script for content ingestion.
 -   **FR-002**: The script MUST be able to crawl content from either a live URL or a local Docusaurus build directory.
 -   **FR-003**: The system MUST chunk Markdown content deterministically.
--   **FR-004**: The system MUST generate embeddings for content chunks using the Cohere API.
+-   **FR-004**: The system MUST generate embeddings for content chunks.
 -   **FR-005**: The system MUST store the generated vectors in a Qdrant database.
 -   **FR-006**: Each vector's metadata in Qdrant MUST include `doc_id`, `section_title`, `url`, and `source_type` (text/code).
 -   **FR-007**: Qdrant collections MUST be versioned to track changes over time.

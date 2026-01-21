@@ -1,0 +1,69 @@
+openapi: 3.0.0
+info:
+  title: Agentic RAG Backend API
+  description: API for a stateless RAG agent that answers questions using retrieved textbook context.
+  version: 0.1.0
+
+paths:
+  /chat/query:
+    post:
+      summary: Query the RAG agent
+      description: |
+        Submits a question, and optionally a code block, to the agent. 
+        The agent returns a grounded answer with citations based on textbook content.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Query'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '422':
+          description: Validation Error
+
+components:
+  schemas:
+    Query:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          description: The user's primary question in natural language.
+          example: "How do I create a ROS 2 node in Python?"
+        code_block:
+          type: string
+          description: An optional block of code provided by the user for context-aware questions.
+          example: "class MyNode(Node):
+  def __init__(self):
+    super().__init__('my_node')"
+
+    Response:
+      type: object
+      required:
+        - answer
+        - sources
+        - status
+      properties:
+        answer:
+          type: string
+          description: The generated answer to the user's question.
+          example: "To create a ROS 2 node, you inherit from the rclpy.node.Node class."
+        sources:
+          type: array
+          items:
+            type: string
+          description: A list of source identifiers that were used to generate the answer.
+          example: ["ros2_textbook_v1:chapter_3_page_12"]
+        status:
+          type: string
+          enum: [success, error, no_answer]
+          description: The status of the response.
+          example: "success"

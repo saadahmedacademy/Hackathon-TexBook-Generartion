@@ -17,7 +17,7 @@ The implementation will follow a modular, phased approach, building from foundat
 - [X] T001 Create the root directory for the backend at `src/backend/`.
 - [X] T002 Create `src/backend/__init__.py` to make it a Python package.
 - [X] T003 Update the global `requirements.txt` to add `fastapi`, `uvicorn`, `openai-agent-sdk`, `google-generativeai`, `python-dotenv`, `qdrant-client` (if not already there for retrieval).
-- [X] T004 Create `src/backend/config.py` to load environment variables (GEMINI_API_KEY, COHERE_API_KEY, QDRANT_URL, QDRANT_COLLECTION_NAME).
+- [X] T004 Create `src/backend/config.py` to load environment variables (GEMINI_API_KEY, QDRANT_URL, QDRANT_COLLECTION_NAME).
 - [X] T005 Create `src/backend/main.py` as the entry point for the FastAPI application.
 
 ---

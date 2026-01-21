@@ -15,7 +15,6 @@ The backend exposes a REST API endpoint (`/chat/query`) that orchestrates the fo
 
 ### 1. Prerequisites
 -   Python 3.11+
--   `COHERE_API_KEY` (for retrieval embeddings)
 -   `GEMINI_API_KEY` (for LLM calls)
 -   A running Qdrant instance with an ingested textbook collection (from Feature `007-content-ingestion-pipeline`)
 
@@ -31,9 +30,6 @@ Create a `.env` file in the project root or export the following variables:
 ```bash
 # Your Gemini API Key
 GEMINI_API_KEY="your_gemini_api_key"
-
-# Your Cohere API Key (used by the Retrieval Layer)
-COHERE_API_KEY="your_cohere_api_key"
 
 # The URL for your Qdrant instance (used by the Retrieval Layer)
 QDRANT_URL="http://localhost:6333"

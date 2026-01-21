@@ -127,37 +127,6 @@ This phase addresses the backend CORS configuration and a visual transparency is
 
 ---
 
-### Phase 10: Integrate Cohere + Qdrant Retrieval
-
-This phase focuses on replacing the stubbed retrieval logic in `agent_core.py` with actual calls to the Cohere + Qdrant retrieval infrastructure, enhancing the agent's ability to provide grounded answers.
-
--   [ ] T050 Identify the `answer_question` method in `src/backend/agent_core.py`.
--   [ ] T051 Identify the existing Qdrant retrieval function (likely in `src/retrieval/`).
--   [ ] T052 Import necessary components from `src/retrieval/` into `src/backend/agent_core.py`.
--   [ ] T053 Remove all simulated or stubbed retrieval logic from `src/backend/agent_core.py`, specifically the hardcoded `context` and the "no context query" simulation.
--   [ ] T054 Implement a call to the Qdrant retrieval function for every non-greeting query in `src/backend/agent_core.py`, retrieving top-k textbook chunks (configurable, default k=5).
--   [ ] T055 If retrieval returns empty chunks:
-    *   Return a `ChatResponse` with `refusal_reason="I cannot answer questions that are outside the scope of the ROS 2 textbook. No relevant information was found."`
-    *   Ensure Gemini is **not** called in this scenario.
--   [ ] T056 Modify the Gemini call in `src/backend/agent_core.py` to pass the retrieved textbook chunks as explicit context.
--   [ ] T057 Update `src/backend/prompts.py` to instruct Gemini to:
-    *   Answer ONLY from provided context.
-    *   Do not use external knowledge.
-    *   Cite every factual claim.
--   [ ] T058 Remove any hardcoded or placeholder Gemini responses from `src/backend/agent_core.py`.
--   [ ] T059 Build the `answer` dynamically from Gemini's output.
--   [ ] T060 Generate `citations` for the `ChatResponse` from the retrieved chunks, including `source_url` and `section_heading`.
--   [ ] T061 Ensure different questions produce different answers (covered by integration).
--   [ ] T062 Preserve existing greeting handling (`T023`-`T028`) and out-of-scope refusal behavior (`T011`-`T016`). (Verification task).
--   [ ] T063 Update unit tests in `tests/test_chat_query.py`:
-    *   Remove or update tests that rely on stubbed text or the "no context query" simulation.
-    *   Add new tests to assert:
-        *   Retrieval is invoked (mocking retrieval tool).
-        *   Different queries lead to different answers (with mocked retrieval and Gemini).
-        *   Empty retrieval leads to refusal (with mocked empty retrieval).
-
----
-
 ### Phase 6: Handle Greeting Inputs
 
 This phase focuses on adding a system-level response for common greeting inputs, bypassing retrieval and LLM calls for these specific conversational triggers.

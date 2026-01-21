@@ -32,4 +32,4 @@
 ## Notes
 
 - All clarifications resolved.
-- Edge cases to consider: empty query strings, very short query strings, Qdrant service unavailability, Cohere API rate limits or failures.
+- Edge cases to consider: empty query strings, very short query strings, Qdrant service unavailability.

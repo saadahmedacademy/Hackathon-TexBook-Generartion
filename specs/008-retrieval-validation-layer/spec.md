@@ -3,7 +3,7 @@
 **Feature Branch**: `008-retrieval-validation-layer`
 **Created**: 2025-12-22
 **Status**: Draft
-**Input**: User description: "Build a retrieval and validation layer for querying textbook embeddings stored in Qdrant. What I am building: - A deterministic retrieval pipeline that converts user queries to embeddings - Performs similarity search in Qdrant - Applies score thresholds and top-k filtering Audience: - AI engineers validating RAG quality Success criteria: - Retrieved chunks always originate from textbook content - Out-of-scope queries return empty results - Retrieval behavior is reproducible and testable - Precision validated with a manual test set Constraints: - Embeddings: Cohere - Vector DB: Qdrant - NO LLM calls allowed - Retrieval must be stateless and deterministic Not building: - Any agent or chatbot logic - FastAPI or frontend integration - Answer generation"
+**Input**: User description: "Build a retrieval and validation layer for querying textbook embeddings stored in Qdrant. What I am building: - A deterministic retrieval pipeline that converts user queries to embeddings - Performs similarity search in Qdrant - Applies score thresholds and top-k filtering Audience: - AI engineers validating RAG quality Success criteria: - Retrieved chunks always originate from textbook content - Out-of-scope queries return empty results - Retrieval behavior is reproducible and testable - Precision validated with a manual test set Constraints: - Embeddings: sentence-transformers - Vector DB: Qdrant - NO LLM calls allowed - Retrieval must be stateless and deterministic Not building: - Any agent or chatbot logic - FastAPI or frontend integration - Answer generation"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -26,7 +26,7 @@ As an AI engineer, I want to provide a text query to a retrieval module and rece
 ### Functional Requirements
 
 -   **FR-001**: The system MUST provide a retrieval module that accepts a string query as input.
--   **FR-002**: The module MUST use the Cohere API to convert the input query into an embedding vector.
+-   **FR-002**: The module MUST convert the input query into an embedding vector.
 -   **FR-003**: The module MUST perform a similarity search against the vector index in Qdrant to find relevant content chunks.
 -   **FR-004**: The retrieval process MUST be stateless and deterministic.
 -   **FR-005**: The module MUST NOT use any Large Language Models (LLMs) for any part of the retrieval or ranking process.

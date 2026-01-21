@@ -8,7 +8,7 @@ This guide explains how to run the content ingestion and embedding pipeline.
 The pipeline script will require several Python libraries.
 
 ```bash
-pip install "qdrant-client[fastembed]" cohere requests beautifulsoup4 markdownify langchain
+pip install "qdrant-client[fastembed]" sentence-transformers requests beautifulsoup4 markdownify langchain
 ```
 
 ### b. Configure Environment Variables
@@ -17,9 +17,6 @@ Create a `.env` file in the root of the project or export the following environm
 ```bash
 # The full URL of the deployed Docusaurus website
 export VERCEL_URL="https://your-docusaurus-site.vercel.app"
-
-# Your Cohere API Key
-export COHERE_API_KEY="your_cohere_api_key"
 
 # The URL for your Qdrant instance
 export QDRANT_URL="http://localhost:6333"

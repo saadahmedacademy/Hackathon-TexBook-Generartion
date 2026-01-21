@@ -4,6 +4,7 @@ from typing import List, Optional
 class Document(BaseModel):
     source_id: str
     content: str
+    title: Optional[str] = None
 
 class Query(BaseModel):
     question: str
@@ -11,6 +12,7 @@ class Query(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
-    citations: List[Document]
+    citations: Optional[List[Document]] = None
     status: str
     refusal_reason: Optional[str] = None
+    stream_id: Optional[str] = None

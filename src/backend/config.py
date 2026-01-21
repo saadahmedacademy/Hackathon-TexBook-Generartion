@@ -1,1 +1,3 @@
-# This file is reserved for application settings.
+# Default retrieval parameters
+DEFAULT_TOP_K = 5
+DEFAULT_SCORE_THRESHOLD = 0.5

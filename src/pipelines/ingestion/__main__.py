@@ -1,16 +1,26 @@
 import typer
 from typing_extensions import Annotated
 import logging
+from typing import List
 
 from . import config
 from . import crawler
 from . import html_parser
 from . import chunker
-from . import embedder
 from . import storage
+from sentence_transformers import SentenceTransformer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 app = typer.Typer()
+
+def embed_chunks(model: SentenceTransformer, texts: List[str]) -> List[List[float]]:
+    """Embeds a list of text chunks using the SentenceTransformer model."""
+    try:
+        embeddings = model.encode(texts, convert_to_tensor=False).tolist()
+        return embeddings
+    except Exception as e:
+        logging.error(f"Error embedding chunks with SentenceTransformer: {e}")
+        return []
 
 @app.command()
 def run(
@@ -28,15 +38,14 @@ def run(
     
     # 0. Initialize clients
     qdrant_client = storage.get_qdrant_client()
-    cohere_client = embedder.get_cohere_client()
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
     # 1. Handle collection creation/recreation
     if force_recreate:
         logging.warning(f"Force recreate enabled. Deleting collection '{collection_name}' if it exists.")
         qdrant_client.delete_collection(collection_name=collection_name)
     
-    # Using Cohere's default vector size for this model
-    storage.create_collection(qdrant_client, collection_name, vector_size=1024)
+    storage.create_collection(qdrant_client, collection_name, vector_size=384)
 
     # 2. Crawl
     logging.info(f"Crawling site starting from {url}...")
@@ -74,12 +83,12 @@ def run(
     # 5. Embed
     logging.info(f"\nEmbedding {len(all_chunks)} chunks in total...")
     chunk_texts = [chunk.text for chunk in all_chunks]
-    # Process in batches for embedding to avoid hitting API limits
-    batch_size = 96 # Cohere's API has a limit of 96 strings per call for embeddings
+    # Process in batches for embedding
+    batch_size = 96
     all_embeddings = []
     for i in range(0, len(chunk_texts), batch_size):
         batch_texts = chunk_texts[i:i+batch_size]
-        embeddings_batch = embedder.embed_chunks(cohere_client, batch_texts)
+        embeddings_batch = embed_chunks(embedding_model, batch_texts)
         all_embeddings.extend(embeddings_batch)
         logging.info(f"  -> Embedded batch {i//batch_size + 1}/{(len(chunk_texts)-1)//batch_size + 1}")
 
@@ -93,4 +102,3 @@ def run(
 
 if __name__ == "__main__":
     app()
-

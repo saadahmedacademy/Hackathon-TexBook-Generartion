@@ -10,18 +10,18 @@ def extract_content_from_html(html_content: str, base_url: str) -> tuple[str, st
     """
     soup = BeautifulSoup(html_content, "html.parser")
     
-    article = soup.find("article")
-    if not article:
-        logging.warning(f"No <article> tag found on page with base URL: {base_url}")
+    main_content = soup.find("main")
+    if not main_content:
+        logging.warning(f"No <main> tag found on page with base URL: {base_url}")
         return None
         
     # Extract title, usually the first h1
-    title_tag = article.find("h1")
+    title_tag = main_content.find("h1")
     title = title_tag.get_text(strip=True) if title_tag else "Untitled"
 
-    # Convert article content to Markdown
+    # Convert main_content content to Markdown
     # This helps in cleaning up the HTML and structuring the text
-    markdown_content = md(str(article), heading_style="ATX")
+    markdown_content = md(str(main_content), heading_style="ATX")
     
     return markdown_content, title
 

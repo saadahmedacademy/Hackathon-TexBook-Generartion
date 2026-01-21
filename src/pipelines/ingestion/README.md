@@ -8,7 +8,7 @@ The process is as follows:
 1.  **Crawl**: Discover all pages of the target website.
 2.  **Parse**: Extract the main article content from each page's HTML.
 3.  **Chunk**: Break down the content into smaller, manageable chunks.
-4.  **Embed**: Convert each chunk into a vector embedding using the Cohere API.
+4.  **Embed**: Convert each chunk into a vector embedding.
 5.  **Store**: Upload the vectors and their metadata to a Qdrant collection.
 
 ## Setup
@@ -24,9 +24,6 @@ Create a `.env` file in the project root or export the following variables:
 ```bash
 # The full URL of the deployed Docusaurus website
 VERCEL_URL="https://your-docusaurus-site.vercel.app"
-
-# Your Cohere API Key
-COHERE_API_KEY="your_cohere_api_key"
 
 # The URL for your Qdrant instance
 QDRANT_URL="http://localhost:6333"

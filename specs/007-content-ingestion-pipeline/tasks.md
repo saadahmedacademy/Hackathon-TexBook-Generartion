@@ -15,8 +15,8 @@ The implementation will follow a modular, phased approach. We will first set up 
 **Goal**: Initialize the project structure, dependencies, and configuration management.
 
 - [X] T001 Create the root directory for the pipeline at `src/pipelines/ingestion/`.
-- [X] T002 Create a `requirements.txt` file in the root directory and add `qdrant-client`, `cohere`, `requests`, `beautifulsoup4`, `markdownify`, `langchain`, `python-dotenv`, `typer`.
-- [X] T003 [P] Implement a configuration module in `src/pipelines/ingestion/config.py` to load environment variables (VERCEL_URL, COHERE_API_KEY, QDRANT_URL, QDRANT_COLLECTION_NAME) using `python-dotenv`.
+- [X] T002 Create a `requirements.txt` file in the root directory and add `qdrant-client`, `sentence-transformers`, `requests`, `beautifulsoup4`, `markdownify`, `langchain`, `python-dotenv`, `typer`.
+- [X] T003 [P] Implement a configuration module in `src/pipelines/ingestion/config.py` to load environment variables (VERCEL_URL, QDRANT_URL, QDRANT_COLLECTION_NAME) using `python-dotenv`.
 - [X] T004 [P] Create an empty `__main__.py` inside `src/pipelines/ingestion/` to make it a runnable module.
 
 ---
@@ -41,7 +41,7 @@ The implementation will follow a modular, phased approach. We will first set up 
 - [X] T007 [P] [US1] Implement the `crawler` module in `src/pipelines/ingestion/crawler.py`. It should contain a function that fetches a sitemap or recursively finds all page URLs from the base VERCEL_URL.
 - [X] T008 [P] [US1] Implement the `html_parser` module in `src/pipelines/ingestion/html_parser.py`. It should contain a function that takes HTML content and extracts the clean text and code blocks from the `<article>` tag, along with section headings.
 - [X] T009 [US1] Implement the `chunker` module in `src/pipelines/ingestion/chunker.py`. This module will take Markdown text, use `RecursiveCharacterTextSplitter` to chunk it, and generate a deterministic ID for each chunk using the `hash(page_url + chunk_content)` strategy.
-- [X] T010 [P] [US1] Implement the `embedder` module in `src/pipelines/ingestion/embedder.py`. This will be a wrapper around the Cohere client, handling authentication and exposing a function to embed a list of text chunks.
+- [X] T010 [P] [US1] Implement the embedding logic directly in `src/pipelines/ingestion/__main__.py`. This will use the `sentence-transformers` library to embed a list of text chunks.
 - [X] T011 [P] [US1] Implement the `storage` module in `src/pipelines/ingestion/storage.py`. This will be a wrapper around the `qdrant-client`, handling collection creation and batch upserting of `QdrantPoint` objects.
 - [X] T012 [US1] Implement the main orchestration logic in `src/pipelines/ingestion/__main__.py`. This script will use `typer` to handle CLI arguments and will call the other modules in the correct sequence: Crawl -> Parse -> Chunk -> Embed -> Store.
 
@@ -52,7 +52,7 @@ The implementation will follow a modular, phased approach. We will first set up 
 **Goal**: Add logging, error handling, and final documentation.
 
 - [X] T013 [P] Add structured logging (e.g., using Python's `logging` module) to all modules to provide visibility into the pipeline's execution.
-- [X] T014 [P] Implement robust error handling, including retries for network requests (in `crawler` and `embedder`) and graceful skipping of unparseable pages, as defined in `research.md`.
+- [X] T014 [P] Implement robust error handling, including retries for network requests (in `crawler`) and graceful skipping of unparseable pages, as defined in `research.md`.
 - [X] T015 Create a `README.md` in the `src/pipelines/ingestion/` directory, documenting the setup and execution steps from the `quickstart.md`.
 
 ## Dependencies
