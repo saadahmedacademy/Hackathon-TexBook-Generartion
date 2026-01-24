@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import ChatMessage from './ChatMessage';
 import { useChat } from './useChat';
-import { fetchChatResponse } from './apiClient';
+import { useChatApiUrl, fetchChatResponse } from './apiClient';
 import { handleCitationClick } from './utils';
 
 interface ChatWidgetProps {
@@ -16,6 +16,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose, selectedText }
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [contextualText, setContextualText] = useState('');
+  const apiUrl = useChatApiUrl();
 
   useEffect(() => {
     if (selectedText) {
@@ -40,7 +41,7 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose, selectedText }
     const agentMessageId = addMessage({ sender: 'agent' as const, text: '', isLoading: true });
 
     try {
-      const response = await fetchChatResponse({ question: inputValue, code_block: contextualText });
+      const response = await fetchChatResponse(apiUrl, { question: inputValue, code_block: contextualText });
       updateMessage(agentMessageId, { 
         isLoading: false, 
         text: response.answer, 

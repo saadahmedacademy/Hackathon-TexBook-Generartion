@@ -1,3 +1,5 @@
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+
 // Define request and response payloads based on data-model.md
 export interface ChatRequestPayload {
     question: string;
@@ -15,15 +17,23 @@ export interface ChatResponsePayload {
     refusal_reason?: string | null;
 }
 
-const API_URL = process.env.REACT_APP_CHAT_API_URL || 'http://localhost:8000';
+export const useChatApiUrl = () => {
+    const { siteConfig } = useDocusaurusContext();
+    return siteConfig.customFields.chatApiUrl as string;
+};
 
-export const fetchChatResponse = async (payload: ChatRequestPayload): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${API_URL}/chat/query`, {
+export const fetchChatResponse = async (
+    apiUrl: string,
+    payload: ChatRequestPayload
+): Promise<ChatResponsePayload> => {
+    const response = await fetch(`${apiUrl}/run/predict`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+            data: [payload.question],
+        }),
     });
 
     if (!response.ok) {
@@ -31,5 +41,17 @@ export const fetchChatResponse = async (payload: ChatRequestPayload): Promise<Ch
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    return response.json();
+    const json = await response.json();
+    // The Gradio API returns a JSON string inside a list, so we need to parse it twice.
+    if (json.data && json.data.length > 0) {
+        try {
+            const chatResponse: ChatResponsePayload = JSON.parse(json.data[0]);
+            return chatResponse;
+        } catch (e) {
+            throw new Error('Failed to parse response from API');
+        }
+    }
+    
+    throw new Error('Invalid response format from API');
 };
+

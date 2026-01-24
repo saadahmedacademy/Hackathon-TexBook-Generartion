@@ -7,6 +7,9 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'ROS 2 Textbook',
   tagline: 'A comprehensive guide to ROS 2 and humanoid robotics',
+  customFields: {
+    chatApiUrl: 'https://saadi786-ros2-rag-backend.hf.space',
+  },
   favicon: 'img/logo.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
