@@ -18,10 +18,12 @@ export interface ChatResponsePayload {
 }
 
 export const useChatApiUrl = () => {
-    const apiUrl = process.env.NEXT_PUBLIC_CHAT_API_URL;
-    if (!apiUrl) throw new Error("NEXT_PUBLIC_CHAT_API_URL is not defined");
-    return apiUrl;
+  const { siteConfig } = useDocusaurusContext();
+  const apiUrl = siteConfig.customFields.chatApiUrl as string;
+  if (!apiUrl) throw new Error("chatApiUrl is not defined in siteConfig.customFields");
+  return apiUrl;
 };
+
 
 export const fetchChatResponse = async (
     apiUrl: string,
@@ -40,7 +42,10 @@ export const fetchChatResponse = async (
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    const json: ChatResponsePayload = await response.json();
-    return json;
+    return await response.json() as ChatResponsePayload;
+
+
+    // const json: ChatResponsePayload = await response.json();
+    // return json;
 };
 
