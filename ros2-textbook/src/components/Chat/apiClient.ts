@@ -17,22 +17,24 @@ export const fetchChatResponse = async (
   apiUrl: string,
   payload: ChatRequestPayload
 ): Promise<{ answer: string }> => {
-  const response = await fetch(`${apiUrl}/run/predict`, {
+  const response = await fetch(`${apiUrl}/predict`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
     body: JSON.stringify({
-      api_name: '/rag_predict',   // 👈 THIS is critical
-      data: [payload.question],  // must be array
+      api_name: '/rag_predict',
+      data: [payload.question],
     }),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HF error ${response.status}: ${text}`);
+    throw new Error(`HF ${response.status}: ${text}`);
   }
 
   const json = await response.json();
-
-  // Gradio returns output inside data[0]
   return { answer: json.data[0] };
 };
+
