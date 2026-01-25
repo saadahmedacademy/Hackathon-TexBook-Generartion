@@ -1,39 +1,42 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
+// Define request and response payloads based on data-model.md
 export interface ChatRequestPayload {
-  question: string;
+    question: string;
+    code_block?: string | null;
 }
 
-export const useChatApiUrl = () => {
+export interface Citation {
+    source_url: string;
+    section_heading: string;
+}
+
+export interface ChatResponsePayload {
+    answer: string;
+    citations: Citation[];
+    refusal_reason?: string | null;
+    status: string;
+}
+
+export function useChatApiUrl(): string {
   const { siteConfig } = useDocusaurusContext();
-  const apiUrl = siteConfig.customFields.chatApiUrl as string;
-  if (!apiUrl) {
-    throw new Error('chatApiUrl not defined in docusaurus.config.ts');
-  }
-  return apiUrl;
+  // Ensure customFields and chatApiUrl exist, with a fallback
+  return (siteConfig.customFields?.chatApiUrl as string) || 'http://127.0.0.1:8000';
+}
+
+export const fetchChatResponse = async (apiUrl: string, payload: ChatRequestPayload): Promise<ChatResponsePayload> => {
+    const response = await fetch(`${apiUrl}/chat/query`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
 };
-
-export const fetchChatResponse = async (
-  apiUrl: string,
-  payload: ChatRequestPayload
-): Promise<{ answer: string }> => {
-  const response = await fetch(`${apiUrl}/gradio_api/predict`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      data: [payload.question],
-      api_name: '/rag_predict',
-    }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`HF ${response.status}: ${text}`);
-  }
-
-  const json = await response.json();
-  return { answer: json.data[0] };
-};
-
