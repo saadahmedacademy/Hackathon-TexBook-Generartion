@@ -29,12 +29,12 @@ export const fetchChatResponse = async (
     apiUrl: string,
     payload: ChatRequestPayload
 ): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${apiUrl}/chat/query`, {
+    const response = await fetch(`${apiUrl}/rag_predict`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ "user_input": payload.question }),
     });
 
     if (!response.ok) {
@@ -42,10 +42,19 @@ export const fetchChatResponse = async (
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    return await response.json() as ChatResponsePayload;
+    const gradioResponse = await response.json();
 
+    // The actual response from Gradio is a JSON-encoded string within the 'data' array.
+    if (gradioResponse.data && gradioResponse.data.length > 0) {
+        const innerJsonString = gradioResponse.data[0];
+        const finalResponse = JSON.parse(innerJsonString);
 
-    // const json: ChatResponsePayload = await response.json();
-    // return json;
+        return {
+            answer: finalResponse.answer,
+            citations: finalResponse.citations || [],
+        };
+    }
+
+    throw new Error('Unexpected response structure from Gradio API.');
 };
 
