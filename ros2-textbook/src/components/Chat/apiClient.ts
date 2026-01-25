@@ -17,7 +17,7 @@ export const fetchChatResponse = async (
   apiUrl: string,
   payload: ChatRequestPayload
 ): Promise<{ answer: string }> => {
-  const response = await fetch(`${apiUrl}/predict`, {
+  const response = await fetch(`${apiUrl}/api/predict`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -31,10 +31,9 @@ export const fetchChatResponse = async (
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HF ${response.status}: ${text}`);
+    throw new Error(`HF error ${response.status}: ${text}`);
   }
 
   const json = await response.json();
   return { answer: json.data[0] };
 };
-
