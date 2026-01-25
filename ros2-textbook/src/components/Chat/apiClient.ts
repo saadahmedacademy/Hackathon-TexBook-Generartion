@@ -17,23 +17,23 @@ export const fetchChatResponse = async (
   apiUrl: string,
   payload: ChatRequestPayload
 ): Promise<{ answer: string }> => {
-  const response = await fetch(`${apiUrl}/api/predict`, {
+  const response = await fetch(`${apiUrl}/gradio_api/predict`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
     },
     body: JSON.stringify({
-      api_name: '/rag_predict',
       data: [payload.question],
+      api_name: '/rag_predict',
     }),
   });
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`HF error ${response.status}: ${text}`);
+    throw new Error(`HF ${response.status}: ${text}`);
   }
 
   const json = await response.json();
   return { answer: json.data[0] };
 };
+
