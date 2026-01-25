@@ -18,22 +18,21 @@ export interface ChatResponsePayload {
 }
 
 export const useChatApiUrl = () => {
-    const { siteConfig } = useDocusaurusContext();
-    return siteConfig.customFields.chatApiUrl as string;
+    const apiUrl = process.env.NEXT_PUBLIC_CHAT_API_URL;
+    if (!apiUrl) throw new Error("NEXT_PUBLIC_CHAT_API_URL is not defined");
+    return apiUrl;
 };
 
 export const fetchChatResponse = async (
     apiUrl: string,
     payload: ChatRequestPayload
 ): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${apiUrl}/run/predict`, {
+    const response = await fetch(`${apiUrl}/chat/query`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            data: [payload.question],
-        }),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -41,17 +40,7 @@ export const fetchChatResponse = async (
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
-    const json = await response.json();
-    // The Gradio API returns a JSON string inside a list, so we need to parse it twice.
-    if (json.data && json.data.length > 0) {
-        try {
-            const chatResponse: ChatResponsePayload = JSON.parse(json.data[0]);
-            return chatResponse;
-        } catch (e) {
-            throw new Error('Failed to parse response from API');
-        }
-    }
-    
-    throw new Error('Invalid response format from API');
+    const json: ChatResponsePayload = await response.json();
+    return json;
 };
 
