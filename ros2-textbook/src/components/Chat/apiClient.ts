@@ -1,60 +1,38 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
-// Define request and response payloads based on data-model.md
 export interface ChatRequestPayload {
-    question: string;
-    code_block?: string | null;
-}
-
-export interface Citation {
-    source_url: string;
-    section_heading: string;
-}
-
-export interface ChatResponsePayload {
-    answer: string;
-    citations: Citation[];
-    refusal_reason?: string | null;
+  question: string;
 }
 
 export const useChatApiUrl = () => {
   const { siteConfig } = useDocusaurusContext();
   const apiUrl = siteConfig.customFields.chatApiUrl as string;
-  if (!apiUrl) throw new Error("chatApiUrl is not defined in siteConfig.customFields");
+  if (!apiUrl) {
+    throw new Error('chatApiUrl not defined in docusaurus.config.ts');
+  }
   return apiUrl;
 };
 
-
 export const fetchChatResponse = async (
-    apiUrl: string,
-    payload: ChatRequestPayload
-): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${apiUrl}/run/rag_predict`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ "user_input": payload.question }),
-    });
+  apiUrl: string,
+  payload: ChatRequestPayload
+): Promise<{ answer: string }> => {
+  const response = await fetch(`${apiUrl}/run/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_name: '/rag_predict',   // 👈 THIS is critical
+      data: [payload.question],  // must be array
+    }),
+  });
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
-    }
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`HF error ${response.status}: ${text}`);
+  }
 
-    const gradioResponse = await response.json();
+  const json = await response.json();
 
-    // The actual response from Gradio is a JSON-encoded string within the 'data' array.
-    if (gradioResponse.data && gradioResponse.data.length > 0) {
-        const innerJsonString = gradioResponse.data[0];
-        const finalResponse = JSON.parse(innerJsonString);
-
-        return {
-            answer: finalResponse.answer,
-            citations: finalResponse.citations || [],
-        };
-    }
-
-    throw new Error('Unexpected response structure from Gradio API.');
+  // Gradio returns output inside data[0]
+  return { answer: json.data[0] };
 };
-
