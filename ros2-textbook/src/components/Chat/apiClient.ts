@@ -29,7 +29,7 @@ export const fetchChatResponse = async (
     apiUrl: string,
     payload: ChatRequestPayload
 ): Promise<ChatResponsePayload> => {
-    const response = await fetch(`${apiUrl}/rag_predict`, {
+    const response = await fetch(`${apiUrl}/run/rag_predict`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
