@@ -1,20 +1,46 @@
 import sys
 import os
 
-# Ensure src is on PYTHONPATH
 sys.path.append(os.path.abspath("src"))
 
+from fastapi import FastAPI
+from pydantic import BaseModel
 import gradio as gr
+
 from backend.agent_core import AgentCore
 from backend.models import Query
 
-
-# Initialize agent once
 agent = AgentCore()
 
+# --------------------
+# FastAPI
+# --------------------
+app = FastAPI()
+
+class ChatRequest(BaseModel):
+    question: str
+    code_block: str | None = None
+
+@app.post("/chat/query")
+async def chat_query(req: ChatRequest):
+    query = Query(
+        question=req.question,
+        code_block=req.code_block
+    )
+    response = agent.answer_question(query)
+
+    return {
+        "answer": response.answer,
+        "citations": getattr(response, "citations", []),
+        "refusal_reason": response.refusal_reason,
+    }
+
+# --------------------
+# Gradio UI
+# --------------------
 def rag_predict(user_input: str):
     if not user_input or not user_input.strip():
-        return "Please ask a valid ROS 2 question."
+        return "Please ask a ROS 2 related question."
 
     query = Query(
         question=user_input,
@@ -23,30 +49,25 @@ def rag_predict(user_input: str):
 
     response = agent.answer_question(query)
 
-    # Convert ChatResponse to string
-    if response.status in {"success", "system"}:
-        return response.answer or "No answer available."
+    # ✅ Prefer explicit answer
+    if response.answer:
+        return response.answer
 
-    if response.status == "refused":
-        return response.refusal_reason or "Query was refused."
+    # ✅ If refused, show reason (user-friendly)
+    if response.refusal_reason:
+        return response.refusal_reason
 
-    if response.status == "error":
-        return response.refusal_reason or "An internal error occurred."
+    # ✅ Final fallback (should be rare)
+    return "I can only answer questions based on the ROS 2 textbook."
 
-    return "Unexpected response state."
+# Gradio Interface
 
-
-
-demo = gr.Interface(
+gradio_app = gr.Interface(
     fn=rag_predict,
-    inputs=gr.Textbox(
-        lines=4,
-        placeholder="Ask a question about the ROS 2 textbook..."
-    ),
+    inputs=gr.Textbox(lines=4, placeholder="Ask a ROS 2 question"),
     outputs=gr.Textbox(label="Answer"),
     title="ROS 2 Agentic RAG Backend",
-    description="Public API wrapper for the ROS 2 textbook chatbot",
 )
 
-if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+# Mount Gradio on /
+app = gr.mount_gradio_app(app, gradio_app, path="/")

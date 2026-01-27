@@ -23,7 +23,7 @@ class AgentCore:
         self.tools: List[Tool] = [
             Tool(
                 name=RetrievalTool.name,
-                description=RetrieralTool.description,
+                description=RetrievalTool.description,
                 func=RetrievalTool() # Instantiate the tool
             ),
             # Add other tools here (e.g., CodeInterpreterTool for Pytest generation/validation)

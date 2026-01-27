@@ -8,7 +8,7 @@ const config: Config = {
   title: 'ROS 2 Textbook',
   tagline: 'A comprehensive guide to ROS 2 and humanoid robotics',
   customFields: {
-    chatApiUrl: 'https://saadi786-ros2-rag-backend.hf.space',
+    chatApiUrl: 'https://saadi786-ros2-rag-backend.hf.space', // Replace with your actual API URL
   },
   favicon: 'img/logo.svg',
 
