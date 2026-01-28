@@ -1,4 +1,5 @@
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { ChatStatus } from './useChat';
 
 // Define request and response payloads based on data-model.md
 export interface ChatRequestPayload {
@@ -15,7 +16,7 @@ export interface ChatResponsePayload {
     answer: string;
     citations: Citation[];
     refusal_reason?: string | null;
-    status: string;
+    status: ChatStatus;
 }
 
 export function useChatApiUrl(): string {

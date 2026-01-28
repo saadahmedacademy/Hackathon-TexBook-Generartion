@@ -1,157 +1,228 @@
-import re
-from openai_agent_sdk import Agent, Tool
-from typing import List, Optional, Dict, Any
+from .gemini_client import GeminiClient
+from .prompts import SYNTHESIS_PROMPT, CODE_QA_PROMPT, PYTEST_GENERATION_PROMPT
+from .models import Query, ChatResponse, Document
+from .config import DEFAULT_TOP_K, DEFAULT_SCORE_THRESHOLD
+from retrieval.embedder import embed_query
+from retrieval.vector_db import (
+    get_qdrant_client,
+    search_qdrant,
+    check_collection_exists,
+)
+from retrieval.config import QDRANT_COLLECTION_NAME
 import logging
-import json
+import re
 
-from .llm_adapter import GeminiAdapter
-from .tools import RetrievalTool
-from .prompts import SYSTEM_PROMPT_GROUNDED_QNA # Import the prompt
-from .models import Citation, ChatResponse # Import Citation Pydantic model
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 class AgentCore:
     def __init__(self):
-        # Initialize the custom Gemini LLM adapter
-        self.llm = GeminiAdapter(model_name="gemini-pro") # Using gemini-pro as per common use
+        self.gemini_client = GeminiClient()
+        self.qdrant_client = get_qdrant_client()
 
-        # Define the tools available to the agent
-        # The OpenAI Agent SDK expects tools to be instances of Tool class
-        # with function definitions compatible with OpenAI's format.
-        self.tools: List[Tool] = [
-            Tool(
-                name=RetrievalTool.name,
-                description=RetrievalTool.description,
-                func=RetrievalTool() # Instantiate the tool
-            ),
-            # Add other tools here (e.g., CodeInterpreterTool for Pytest generation/validation)
+        self.greetings = {
+            "hi",
+            "hello",
+            "hey",
+            "good morning",
+            "good afternoon",
+            "good evening",
+        }
+
+        self.identity_questions = {
+            "what is your name",
+            "what's your name",
+            "who are you",
+        }
+
+        self.vague_terms = {"ros", "ros 2", "robotics"}
+
+        self.conversational_questions = {
+            "how are you",
+            "how are you doing",
+            "how's it going",
+            "what's up",
+            "what are you",
+        }
+
+        self._module_mapping = {
+            "1": "ROS Foundations",
+            "2": "Nodes, Topics, and Services",
+            "3": "URDF and Humanoid Simulation",
+            "4": "Perception and SLAM",
+            "5": "Navigation and Manipulation",
+            "6": "Vision, Language, and Action",
+        }
+
+    # --------------------------------------------------
+    # Query preprocessing
+    # --------------------------------------------------
+    def _preprocess_query(self, question: str) -> tuple[str, bool, bool]:
+        match = re.search(r"\b(module|chapter)\s+(\d+)\b", question, re.IGNORECASE)
+
+        if match:
+            module_number = match.group(2)
+            if module_number in self._module_mapping:
+                module_title = self._module_mapping[module_number]
+                expanded_query = (
+                    f"Explain {module_title} (Module {module_number}) from the ROS 2 textbook."
+                )
+                logging.info(f"Expanded module query: {expanded_query}")
+                return expanded_query, True, True
+            return question, True, False
+
+        return question, False, False
+
+    # --------------------------------------------------
+    # Main RAG pipeline
+    # --------------------------------------------------
+    def answer_question(self, query: Query) -> ChatResponse:
+        normalized = query.question.lower().strip().rstrip("?!. ")
+
+        # ---- Greetings (robust for HF Gradio) ----
+        if any(normalized.startswith(g) for g in self.greetings):
+            return ChatResponse(
+                answer="Hi! I can help you with questions about the ROS 2 textbook. What would you like to learn?",
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
+        if any(normalized.startswith(q) for q in self.identity_questions):
+            return ChatResponse(
+                answer="I am a ROS 2 textbook assistant designed to answer questions using verified textbook content.",
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
+        if normalized in self.vague_terms:
+            return ChatResponse(
+                answer=(
+                    "That topic is quite broad. Could you ask a more specific ROS 2 question? "
+                    "For example, nodes, topics, services, or navigation."
+                ),
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
+        if any(normalized.startswith(q) for q in self.conversational_questions):
+            return ChatResponse(
+                answer="I'm here to help with ROS 2 textbook questions 🙂",
+                status="system",
+                citations=[],
+                refusal_reason=None,
+            )
+
+        # ---- Preprocess module queries ----
+        processed_question, is_module_query, is_valid_module = self._preprocess_query(
+            query.question
+        )
+
+        if is_module_query and not is_valid_module:
+            return ChatResponse(
+                answer="",
+                status="refused",
+                citations=[],
+                refusal_reason="That module is not part of the indexed ROS 2 textbook (valid modules: 1–6).",
+            )
+
+        # ---- Embedding ----
+        try:
+            query_vector = embed_query(processed_question)
+        except Exception:
+            logging.exception("Embedding failed")
+            return ChatResponse(
+                answer="",
+                status="error",
+                citations=[],
+                refusal_reason="Failed to process your question. Please try again.",
+            )
+
+        # ---- Qdrant readiness ----
+        if not check_collection_exists(self.qdrant_client, QDRANT_COLLECTION_NAME):
+            return ChatResponse(
+                answer="",
+                status="error",
+                citations=[],
+                refusal_reason="The knowledge base is not initialized yet.",
+            )
+
+        # ---- Retrieval ----
+        try:
+            retrieved_chunks = search_qdrant(
+                client=self.qdrant_client,
+                collection_name=QDRANT_COLLECTION_NAME,
+                query_vector=query_vector,
+                limit=DEFAULT_TOP_K,
+                score_threshold=DEFAULT_SCORE_THRESHOLD,
+            )
+        except Exception:
+            logging.exception("Qdrant search failed")
+            retrieved_chunks = []
+
+        if not retrieved_chunks:
+            logging.info(f"No retrieval for: {processed_question}")
+            return ChatResponse(
+                answer="",
+                status="refused",
+                citations=[],
+                refusal_reason=(
+                    "I could not find relevant information in the ROS 2 textbook. "
+                    "Please rephrase or be more specific."
+                ),
+            )
+
+        # ---- Context assembly ----
+        context = "\n\n".join(chunk.text for chunk in retrieved_chunks if chunk.text)
+
+        if not context.strip():
+            return ChatResponse(
+                answer="",
+                status="refused",
+                citations=[],
+                refusal_reason="Relevant documents were found, but no usable context was available.",
+            )
+
+        # ---- Prompt selection ----
+        if query.code_block:
+            prompt = CODE_QA_PROMPT.format(
+                context=context,
+                code=query.code_block,
+                question=processed_question,
+            )
+        else:
+            prompt = SYNTHESIS_PROMPT.format(
+                context=context,
+                question=processed_question,
+            )
+
+        # ---- LLM ----
+        llm_response = self.gemini_client.query_llm(prompt)
+
+        final_answer = re.split(
+            r"^\s*(sources?|references?|citations?):",
+            llm_response,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )[0].strip()
+
+        citations = [
+            Document(
+                source_id=chunk.doc_id,
+                content=chunk.text,
+                title=chunk.metadata.get("title"),
+            )
+            for chunk in retrieved_chunks
         ]
 
-        # Initialize the Agent from OpenAI Agent SDK. This assumes the SDK's Agent can take
-        # a custom LLM and tools directly, and will use the LLM's tool_calling capabilities.
-        # Our GeminiAdapter now has rudimentary tool_calling support.
-        # The Agent class may not be directly usable if our GeminiAdapter does not fully
-        # conform to its expected LLM interface (e.g., for handling tool_code in responses).
-        # For now, we will use a manual orchestration loop.
-        self.agent = Agent(
-            llm=self.llm,
-            tools=self.tools,
+        return ChatResponse(
+            answer=final_answer,
+            citations=citations,
+            status="success",
         )
-        logger.info("AgentCore initialized with GeminiAdapter and RetrievalTool.")
 
-    def get_agent_response(self, user_query: str, code_block: str | None = None) -> Dict[str, Any]:
-        """
-        Orchestrates the agent's response based on user query and optional code block.
-        Returns a dictionary containing the answer, citations, and refusal reason.
-        """
-        logger.info(f"AgentCore received query: '{user_query[:50]}...'\n")
-
-        # --- Manual Retrieval Tool Call (Temporary, until full AgentSDK tool orchestration) ---
-        # In a fully integrated OpenAI Agent SDK, the agent itself would decide WHEN to call tools.
-        # For our current GeminiAdapter, we manually perform retrieval and inject context.
-        
-        logger.info(f"Manually triggering retrieval tool for query: '{user_query[:50]}...'\n")
-        retrieval_input = json.dumps({"query": user_query})
-        retrieval_tool_output_str = self.tools[0].func(retrieval_input) # Call the RetrievalTool func
-        
-        try:
-            retrieval_tool_output = json.loads(retrieval_tool_output_str)
-        except json.JSONDecodeError:
-            logger.error(f"Failed to decode JSON from retrieval tool: {retrieval_tool_output_str}")
-            return {
-                "answer": "An internal error occurred while processing retrieval results.",
-                "citations": [],
-                "refusal_reason": "Internal retrieval processing error."
-            }
-
-        if retrieval_tool_output["status"] == "no_context":
-            logger.warning("Retrieval tool returned no relevant context.")
-            return {
-                "answer": "I cannot answer your question based on the available information.",
-                "citations": [],
-                "refusal_reason": "No relevant context found for the query."
-            }
-        
-        context = retrieval_tool_output["context"]
-        context_str = "\n".join([f"Source: {c['source_url']}, Section: {c['section_heading']}\nContent: {c['text']}" for c in context])
-
-        # Prepare the messages for the LLM
-        messages_for_llm: List[Dict[str, Any]] = []
-        
-        # Prepend the system prompt with the retrieved context
-        system_message_content = SYSTEM_PROMPT_GROUNDED_QNA.format(
-            context=context_str,
-            code_block=code_block if code_block else "None provided."
-        )
-        messages_for_llm.append({"role": "system", "content": system_message_content})
-        messages_for_llm.append({"role": "user", "content": user_query})
-        
-        try:
-            # Call the LLM adapter with messages and tools (for Gemini to understand available tools)
-            llm_raw_response = self.llm.generate(messages_for_llm, tools=[t.openai_function for t in self.tools])
-            
-            # Check if Gemini wants to make a tool call (unlikely for final response with this flow)
-            if isinstance(llm_raw_response, dict) and "tool_code" in llm_raw_response:
-                logger.warning(f"Gemini attempted a tool call: {llm_raw_response['tool_code']}. Agent should respond with text here.")
-                # For this iteration, we treat a tool call as an unexpected final response
-                return {
-                    "answer": "The agent attempted a tool call when a direct answer was expected. This scenario is not yet fully handled.",
-                    "citations": [],
-                    "refusal_reason": "Agent tool call instead of direct answer."
-                }
-
-
-            # Post-process the LLM's response to extract answer and citations
-            answer_lines = llm_raw_response.split('\n')
-            answer_parts = []
-            citations: List[Citation] = []
-            
-            citation_pattern = r"\(Citation: (.+?), Section: (.+?)\)"
-
-            for line in answer_lines:
-                # Find all citations in the line
-                found_citations = re.findall(citation_pattern, line)
-                for source_url, section_heading in found_citations:
-                    citations.append(Citation(source_url=source_url, section_heading=section_heading))
-                
-                # Remove citations from the answer text
-                clean_line = re.sub(citation_pattern, "", line).strip()
-                if clean_line:
-                    answer_parts.append(clean_line)
-
-            final_answer = " ".join(answer_parts).strip()
-
-            # Check for explicit refusal phrases in the LLM's answer
-            if any(phrase in final_answer.lower() for phrase in ["cannot answer your question", "not enough information", "not found in the context"]):
-                logger.info("Agent decided to refuse due to insufficient context based on its response.")
-                return ChatResponse(
-                    answer=final_answer,
-                    citations=[],
-                    refusal_reason="Agent determined insufficient context from retrieval or its internal logic."
-                ).model_dump() # Return as dict
-
-            # Ensure citations are present if an answer is given
-            if not citations and final_answer:
-                 logger.warning(f"Answer provided but no citations extracted. LLM raw response: {llm_raw_response}")
-                 return ChatResponse(
-                    answer="I found some information, but could not extract proper citations. Please rephrase your question or check the textbook manually.",
-                    citations=[],
-                    refusal_reason="Could not extract citations from answer."
-                ).model_dump() # Return as dict
-
-
-            return ChatResponse(
-                answer=final_answer,
-                citations=citations,
-                refusal_reason=None
-            ).model_dump() # Return as dict
-
-        except Exception as e:
-            logger.error(f"Error during agent response generation: {e}", exc_info=True)
-            return {
-                "answer": "An internal error occurred during response generation.",
-                "citations": [],
-                "refusal_reason": "Internal generation error."
-            }
+    # --------------------------------------------------
+    # Pytest generation
+    # --------------------------------------------------
+    def generate_pytest(self, code: str) -> str:
+        prompt = PYTEST_GENERATION_PROMPT.format(code=code)
+        return self.gemini_client.query_llm(prompt)

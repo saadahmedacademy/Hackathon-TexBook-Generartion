@@ -42,13 +42,24 @@ const ChatWidget: React.FC<ChatWidgetProps> = ({ isOpen, onClose, selectedText }
 
     try {
       const response = await fetchChatResponse(apiUrl, { question: inputValue, code_block: contextualText });
+      
+      let messageText = response.answer;
+      if (response.status === "refused") {
+        messageText = response.refusal_reason || 'Sorry, I cannot answer that question.';
+      } else if (response.status === "system") {
+        messageText = response.answer;
+      }
+
       updateMessage(agentMessageId, { 
         isLoading: false, 
-        text: response.answer, 
+        text: messageText, 
         citations: response.citations,
-        isError: !!response.refusal_reason 
+        status: response.status,
+        refusalReason: response.refusal_reason,
+        isError: false 
       });
     } catch (error) {
+      console.error("Chat API error:", error);
       updateMessage(agentMessageId, { 
         isLoading: false, 
         text: 'Sorry, I encountered an error. Please try again.', 
