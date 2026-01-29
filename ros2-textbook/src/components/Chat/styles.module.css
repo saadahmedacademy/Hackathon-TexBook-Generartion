@@ -43,7 +43,8 @@
 }
 
 .userMessage .messageContent {
-  background-color: var(--ifm-color-primary);
+  background-color: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-300);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -92,7 +93,7 @@
   max-width: 90vw;
   height: 600px;
   max-height: 80vh;
-  background-color: var(--ifm-background-color);
+  background-color: var(--ifm-background-surface-color); 
   border: 1px solid var(--ifm-color-emphasis-300);
   border-radius: 12px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
